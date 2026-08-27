@@ -35,9 +35,10 @@ public abstract class FinishedState<M extends GameManager<?>> extends GameState<
         super.manager = manager;
         this.winner = winner;
 
-        if (WaitingWorld.getAvailable().length >= 1) {
-            this.waitingWorld = new WaitingWorld();
-        } // Need an Else here to stop the game
+        // May come back null (pool exhausted, or every remaining world failed to load) - the
+        // caller checks getWaitingWorld() and falls back to ending the game immediately instead
+        // of showing the win celebration.
+        this.waitingWorld = WaitingWorld.tryAcquire();
         listener = new FinishedListener(manager);
     }
 

@@ -2,9 +2,9 @@ package me.mats.bingo.command;
 
 
 import me.mats.bingo.Bingo;
-import me.mats.bingo.game.ingame.BingoLists;
+import me.mats.common.game.ingame.ItemLists;
 import me.mats.bingo.game.BingoManager;
-import me.mats.bingo.game.ingame.IngameState;
+import me.mats.bingo.game.ingame.BingoIngameState;
 import me.mats.bingo.game.waiting.BingoWaitingState;
 import me.mats.bingo.message.BingoMessages;
 import me.mats.common.message.MessageBuilder;
@@ -87,7 +87,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                             }
                         } else if (args[1].equalsIgnoreCase("type") && args.length == 3) {
                             try {
-                                BingoLists.ListType type = BingoLists.ListType.valueOf(args[2].toUpperCase());
+                                ItemLists.ListType type = ItemLists.ListType.valueOf(args[2].toUpperCase());
                                 wState.setSetting(type);
                                 p.sendMessage(BingoMessages.bingo("Changed the Type to §e"+type));
                             } catch (IllegalArgumentException e) {
@@ -98,7 +98,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                             p.sendMessage(MessageBuilder.error("Wrong usage"));
                         }
                     } else if (bingo.inIngameState()) {
-                        IngameState iState = (IngameState) bingo.getGameState();
+                        BingoIngameState iState = (BingoIngameState) bingo.getGameState();
 
                         if (args[1].equalsIgnoreCase("new") && args.length == 2){
                             iState.newBingoField();

@@ -5,8 +5,8 @@ import me.mats.common.enums.Color;
 import me.mats.bingo.game.BingoManager;
 import me.mats.bingo.game.BingoTeam;
 import me.mats.common.game.GameState;
-import me.mats.bingo.game.ingame.BingoLists;
-import me.mats.bingo.game.ingame.IngameState;
+import me.mats.common.game.ingame.ItemLists;
+import me.mats.bingo.game.ingame.BingoIngameState;
 import me.mats.bingo.message.BingoMessages;
 import me.mats.common.message.MessageBuilder;
 import me.mats.common.game.waiting.WaitingState;
@@ -16,7 +16,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 public class BingoWaitingState extends WaitingState<BingoManager> {
-    private BingoLists.ListType setting = BingoLists.ListType.DEFAULT;
+    private ItemLists.ListType setting = ItemLists.ListType.DEFAULT;
     private int size = 5;
     private int extraAbilityPoints = 0;
     private int spawnTime = 60;
@@ -43,7 +43,7 @@ public class BingoWaitingState extends WaitingState<BingoManager> {
 
     @Override
     protected GameState<?> buildNextState() {
-        return new IngameState(manager, size, setting, extraAbilityPoints, spawnTime);
+        return new BingoIngameState(manager, size, setting, extraAbilityPoints, spawnTime);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class BingoWaitingState extends WaitingState<BingoManager> {
     }
 
     // Getters and Setters
-    public void setSetting(BingoLists.ListType setting) {
+    public void setSetting(ItemLists.ListType setting) {
         this.setting = setting;
         sendSizeTypeActionBar();
     }

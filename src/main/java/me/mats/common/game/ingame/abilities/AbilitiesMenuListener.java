@@ -1,8 +1,6 @@
-package me.mats.bingo.game.ingame;
+package me.mats.common.game.ingame.abilities;
 
-import me.mats.bingo.game.BingoTeam;
-import me.mats.bingo.customInventory.AbilitiesInventory;
-import me.mats.common.customInventory.CustomInventoryManager;
+import me.mats.common.game.ingame.IngameState;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,24 +10,22 @@ import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
-import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
 
-import java.util.HashMap;
-import java.util.Map;
-
+// Generic "which quick-access item did the player right-click" routing shared during the
+// pre-spawn-countdown menu phase: the fixed crafting-table/furnace shortcuts, plus a hook for
+// whatever "abilities" GUI a concrete game opens off the smithing-template item.
 public class AbilitiesMenuListener implements Listener {
     private final Inventory fInventory = Bukkit.createInventory(null, InventoryType.FURNACE);
 
-    private final IngameState state;
-    private final Map<BingoTeam, AbilitiesInventory> bingoTeamToGUI;
+    protected final IngameState<?> state;
 
-    public AbilitiesMenuListener(IngameState state) {
+    public AbilitiesMenuListener(IngameState<?> state) {
         this.state = state;
-        bingoTeamToGUI = new HashMap<>(state.getManager().getTeams().size());
-        for (BingoTeam bT : state.getManager().getTeams()) {
-            bingoTeamToGUI.put(bT, new AbilitiesInventory(state, bT));
-        }
+    }
+
+    // Hook: open whatever "abilities" GUI this game has for the given player.
+    protected void openAbilitiesGui(Player p) {
     }
 
     @EventHandler
@@ -37,7 +33,7 @@ public class AbilitiesMenuListener implements Listener {
         Player p = e.getPlayer();
         if (state.getManager().getPlayers().contains(p)) {
             if (p.getInventory().getItemInMainHand().getType() == Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE) {
-                CustomInventoryManager.openInventory(p, bingoTeamToGUI.get(state.getManager().getTeam(p)));
+                openAbilitiesGui(p);
                 e.setCancelled(true);
             } else if (p.getInventory().getItemInMainHand().getType() == Material.CRAFTING_TABLE) {
                 p.openWorkbench(null, true);

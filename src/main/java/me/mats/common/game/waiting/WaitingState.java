@@ -86,10 +86,17 @@ public abstract class WaitingState<M extends GameManager<?>> extends GameState<M
 
         Bukkit.getPluginManager().registerEvents(listener, manager.getPlugin());
 
-        // Check if there is an available waiting world and load it
-        if (WaitingWorld.getAvailable().length >= 1) {
-            this.waitingWorld = new WaitingWorld();
-        } // Need an Else here to stop the game
+        // Check out a waiting world to host this game's lobby
+        this.waitingWorld = WaitingWorld.tryAcquire();
+        if (this.waitingWorld == null) {
+            // No waiting/finished world could be checked out (pool exhausted, or every
+            // remaining one failed to load) - there's nowhere to put this game's lobby, so
+            // end it before anyone can join it.
+            Bukkit.getLogger().warning("No waiting world available - aborting new game " + manager.getName());
+            HandlerList.unregisterAll(listener);
+            manager.teardownAndEnd();
+            return;
+        }
 
         // Create a countdown
         waitingCountdown = new WaitingCountdown(getManager());
@@ -104,7 +111,9 @@ public abstract class WaitingState<M extends GameManager<?>> extends GameState<M
     public void abort() {
         onWaitingStop();
 
-        waitingCountdown.stop();
+        if (waitingCountdown != null) {
+            waitingCountdown.stop();
+        }
         HandlerList.unregisterAll(listener);
 
         for (Team team : manager.getTeams()) {

@@ -1,46 +1,57 @@
-package me.mats.bingo.game.ingame;
+package me.mats.common.game.ingame.spawn;
 
-import me.mats.bingo.game.BingoManager;
+import me.mats.common.game.GameManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.title.TitlePart;
-import org.bukkit.*;
-import org.bukkit.entity.Item;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
+// Generic "countdown to release" shared by every game: title/subtitle tick-down, then equips
+// everyone with an elytra + their team backpack and lets them go. What exactly clears from the
+// spawn platform (spawn-structure-specific geometry) and what happens once players are released
+// (registering that game's own ingame listeners, starting its own timers, etc.) are hooks.
 public class SpawnCountdown {
 
-    private BingoManager manager;
+    protected final GameManager<?> manager;
 
     // Keeps track of actual Countdown
     private int countdown;
 
     private int taskId;
-    private ItemStack elytra;
-    private final IngameState state;
+    private final ItemStack elytra;
 
-
-
-
-    public SpawnCountdown(BingoManager manager, IngameState state) {
+    public SpawnCountdown(GameManager<?> manager) {
         this.manager = manager;
-        this.state = state;
         elytra = new ItemStack(Material.ELYTRA);
         ItemMeta meta = elytra.getItemMeta();
         meta.setUnbreakable(true);
         meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
         elytra.setItemMeta(meta);
+    }
+
+    // Hook: blocks to clear away from the spawn platform once the countdown finishes, so
+    // players can glide off it. Tied to one game's spawn structure - empty (nothing cleared)
+    // by default.
+    protected List<Location> getPlatformClearLocations() {
+        return List.of();
+    }
+
+    // Hook: whatever a concrete game wants to do once players are released (register its own
+    // ingame listeners, start its own timers, etc).
+    protected void onPlayersReleased() {
     }
 
     public void cancel() {
@@ -72,14 +83,7 @@ public class SpawnCountdown {
                 }
 
             } else if (countdown == 0) {
-                // Register Listeners
-                Bukkit.getPluginManager().registerEvents(state.getBingoCollectListener(), manager.getPlugin());
-                Bukkit.getPluginManager().registerEvents(state.getBackpackListener(), manager.getPlugin());
-                Bukkit.getPluginManager().registerEvents(state.getAbilitiesListener(), manager.getPlugin());
-
-                HandlerList.unregisterAll(state.getAbilitiesMenuListener());
-
-                for (Location loc : getLocations()) {
+                for (Location loc : getPlatformClearLocations()) {
                     loc.getBlock().setType(Material.AIR);
                     loc.getBlock().getWorld().playSound(loc, Sound.BLOCK_WOOD_BREAK, SoundCategory.BLOCKS, 1F, 1F);
                     loc.getBlock().getWorld().spawnParticle(Particle.BLOCK_CRACK, loc.add(0.5,0.5,0.5), 1, 0.1, 0.1, 0.1, 1, Material.SPRUCE_FENCE.createBlockData());
@@ -95,8 +99,7 @@ public class SpawnCountdown {
                     p.closeInventory();
 
                 }
-                state.getAbilities().setInitialAbilities();
-                state.startTimer();
+                onPlayersReleased();
                 Bukkit.getScheduler().cancelTask(taskId);
             }
             countdown--;
@@ -104,12 +107,6 @@ public class SpawnCountdown {
         }, 0, 20);
 
 
-    }
-
-    @NotNull
-    private List<Location> getLocations() {
-        int y = manager.getWorld().getSpawnLocation().getBlockY()+2;
-        return List.of(new Location(manager.getWorld(), 2, y, 3), new Location(manager.getWorld(), 1, y, 3), new Location(manager.getWorld(), 1, y, 4), new Location(manager.getWorld(), 0, y, 4), new Location(manager.getWorld(), -1, y, 4), new Location(manager.getWorld(), -1, y, 3), new Location(manager.getWorld(), -2, y, 3), new Location(manager.getWorld(), -3, y, 2), new Location(manager.getWorld(), -3, y, 1), new Location(manager.getWorld(), -4, y, 1), new Location(manager.getWorld(), -4, y, 0), new Location(manager.getWorld(), -4, y, -1), new Location(manager.getWorld(), -3, y, -1), new Location(manager.getWorld(), -3, y, -2), new Location(manager.getWorld(), -2, y, -3), new Location(manager.getWorld(), -1, y, -3), new Location(manager.getWorld(), -1, y, -4), new Location(manager.getWorld(), 0, y, -4), new Location(manager.getWorld(), 1, y, -4), new Location(manager.getWorld(), 1, y, -3), new Location(manager.getWorld(), 2, y, -3), new Location(manager.getWorld(), 3, y, -2), new Location(manager.getWorld(), 3, y, -1), new Location(manager.getWorld(), 4, y, -1), new Location(manager.getWorld(), 4, y, 0), new Location(manager.getWorld(), 4, y, 1), new Location(manager.getWorld(), 3, y, 1), new Location(manager.getWorld(), 3, y, 2));
     }
 
 

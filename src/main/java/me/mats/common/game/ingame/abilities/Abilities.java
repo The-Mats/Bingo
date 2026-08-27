@@ -1,10 +1,9 @@
-package me.mats.bingo.game.ingame;
+package me.mats.common.game.ingame.abilities;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -18,26 +17,29 @@ import java.util.List;
 
 import static me.mats.common.message.MessageBuilder.roman;
 
+// The generic ability roster shared by every game: movement, looting, mining, keep-inventory,
+// lucky diamonds, easter bunny, time wizard and teleporter. A concrete game can add its own
+// extra abilities on top (see BingoAbilities' Thief/Gapper) by overriding replacePlayer,
+// getCorrespondingList, setInitialAbilities and setAbilities - calling super first/last as
+// appropriate - and adding its own lists + getters.
 public class Abilities {
 
-    private final List<Player> movementAbilityList = new ArrayList<>();
-    private final List<Player> looterAbilityList = new ArrayList<>();
-    private final List<Player> looterAbilityList2 = new ArrayList<>();
-    private final List<Player> minerAbilityList = new ArrayList<>();
-    private final List<Player> minerAbilityList2 = new ArrayList<>();
-    private final List<Player> keepInventoryAbilityList = new ArrayList<>();
-    private final List<Player> luckyDiamondsAbilityList = new ArrayList<>();
-    private final List<Player> easterBunnyAbilityList = new ArrayList<>();
-    private final List<Player> timeWizardAbilityList = new ArrayList<>();
-    private final List<Player> teleporterAbilityList = new ArrayList<>();
-    private final List<Player> thiefAbilityList = new ArrayList<>();
-    private final List<Player> gapperAbilityList = new ArrayList<>();
+    protected final List<Player> movementAbilityList = new ArrayList<>();
+    protected final List<Player> looterAbilityList = new ArrayList<>();
+    protected final List<Player> looterAbilityList2 = new ArrayList<>();
+    protected final List<Player> minerAbilityList = new ArrayList<>();
+    protected final List<Player> minerAbilityList2 = new ArrayList<>();
+    protected final List<Player> keepInventoryAbilityList = new ArrayList<>();
+    protected final List<Player> luckyDiamondsAbilityList = new ArrayList<>();
+    protected final List<Player> easterBunnyAbilityList = new ArrayList<>();
+    protected final List<Player> timeWizardAbilityList = new ArrayList<>();
+    protected final List<Player> teleporterAbilityList = new ArrayList<>();
 
-    // Swaps a stale Player reference (e.g. from before a relog) for the current one in every ability list
+    // Swaps a stale Player reference (e.g. from before a relog) for the current one in every
+    // ability list. A subclass adding its own lists should override and call super first.
     public void replacePlayer(Player oldPlayer, Player newPlayer) {
         for (List<Player> list : List.of(movementAbilityList, looterAbilityList, looterAbilityList2, minerAbilityList, minerAbilityList2,
-                keepInventoryAbilityList, luckyDiamondsAbilityList, easterBunnyAbilityList, timeWizardAbilityList, teleporterAbilityList,
-                thiefAbilityList, gapperAbilityList)) {
+                keepInventoryAbilityList, luckyDiamondsAbilityList, easterBunnyAbilityList, timeWizardAbilityList, teleporterAbilityList)) {
             int idx = list.indexOf(oldPlayer);
             if (idx != -1) {
                 list.set(idx, newPlayer);
@@ -45,6 +47,7 @@ public class Abilities {
         }
     }
 
+    // The "level 2" upgrade list for an ability's item Material, if it has one. Null otherwise.
     public List<Player> getOtherList(Material mat) {
         return switch (mat) {
             case GOLDEN_SWORD -> looterAbilityList2;
@@ -53,6 +56,9 @@ public class Abilities {
         };
     }
 
+    // The ability list an item Material in the abilities GUI corresponds to. Null if it isn't
+    // one of this game's abilities. A subclass adding its own abilities should override and
+    // fall back to super for anything it doesn't recognize.
     public List<Player> getCorrespondingList(Material mat) {
         return switch (mat) {
             case FEATHER -> movementAbilityList;
@@ -63,12 +69,13 @@ public class Abilities {
             case TURTLE_EGG -> easterBunnyAbilityList;
             case CLOCK -> timeWizardAbilityList;
             case COMPASS -> teleporterAbilityList;
-            case LEATHER_HELMET -> thiefAbilityList;
-            case GOLDEN_APPLE -> gapperAbilityList;
             default -> null;
         };
     }
 
+    // Applies every currently-held ability's persistent effects to everyone who has it. Called
+    // once players are released from the spawn countdown. A subclass adding its own abilities
+    // should override and call super too.
     public void setInitialAbilities() {
         for (Player p : movementAbilityList) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING, PotionEffect.INFINITE_DURATION, 1));
@@ -90,12 +97,6 @@ public class Abilities {
         for (Player p : timeWizardAbilityList) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, PotionEffect.INFINITE_DURATION, 4));
         }
-        for (Player p : thiefAbilityList) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
-        }
-        for (Player p : gapperAbilityList) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 1));
-        }
 
         ItemStack compass = new ItemStack(Material.COMPASS);
         ItemMeta meta = compass.getItemMeta();
@@ -112,6 +113,8 @@ public class Abilities {
         }
     }
 
+    // Re-applies whatever abilities a single player currently holds (e.g. after a respawn).
+    // A subclass adding its own abilities should override and call super too.
     public void setAbilities(Player p) {
         if (movementAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING, PotionEffect.INFINITE_DURATION, 1));
@@ -132,12 +135,6 @@ public class Abilities {
         }
         if (timeWizardAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, PotionEffect.INFINITE_DURATION, 4));
-        }
-        if (thiefAbilityList.contains(p)) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
-        }
-        if (gapperAbilityList.contains(p)) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 1));
         }
     }
 
@@ -171,14 +168,6 @@ public class Abilities {
 
     public List<Player> getTeleporterAbilityList() {
         return teleporterAbilityList;
-    }
-
-    public List<Player> getGapperAbilityList() {
-        return gapperAbilityList;
-    }
-
-    public List<Player> getThiefAbilityList() {
-        return thiefAbilityList;
     }
 
     public List<Player> getLooterAbilityList2() {

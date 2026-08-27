@@ -14,7 +14,7 @@ services:
       EULA: "TRUE"
       TYPE: "PAPER"
       VERSION: "1.20.2"
-      OPS: "X__gamer"
+      OPS: "The_Mats"
       ENABLE_WHITELIST: "TRUE"
       ENFORCE_WHITELIST: "TRUE"
       EXEC_DIRECTLY: true

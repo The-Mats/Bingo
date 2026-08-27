@@ -1,8 +1,7 @@
-package me.mats.bingo.game.ingame;
+package me.mats.common.game.ingame.abilities;
 
-
-import me.mats.common.customInventory.CustomInventoryManager;
-import me.mats.bingo.customInventory.TeleportInventory;
+import me.mats.common.game.ingame.IngameState;
+import me.mats.common.game.ingame.ItemLists;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bukkit.Bukkit;
@@ -21,7 +20,6 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
@@ -34,9 +32,13 @@ import org.bukkit.loot.LootTable;
 
 import java.util.*;
 
+// Generic ability-effect wiring shared by every game: Movement/Looter/Miner enchant &
+// potion boosts, Keep Inventory, Lucky Diamonds, Easter Bunny, Time Wizard, and Teleporter.
+// A concrete game adds its own exclusive abilities' handlers as extra @EventHandler methods
+// on a subclass (see BingoAbilitiesListener's Gapper).
 public class AbilitiesListener implements Listener {
 
-    private final IngameState state;
+    protected final IngameState<?> state;
     private final static List<Material> spawnEggs = Arrays.stream(Material.values()).filter(m -> m.toString().contains("_SPAWN_EGG")).toList();
     private final static List<Material> hostileSpawnEggs = Arrays.stream(EntityType.values()).filter(AbilitiesListener::isHostile).map(AbilitiesListener::toMaterial).filter(Objects::nonNull).toList();
 
@@ -57,7 +59,7 @@ public class AbilitiesListener implements Listener {
         return false;
     }
 
-    public AbilitiesListener(IngameState state) {
+    public AbilitiesListener(IngameState<?> state) {
         this.state = state;
     }
 
@@ -163,10 +165,8 @@ public class AbilitiesListener implements Listener {
         if (e.getEntity() instanceof Player p && state.getAbilities().getTimeWizardAbilityList().contains(p) && e.getInventoryHolder() != null) {
             Inventory inv = e.getInventoryHolder().getInventory();
             if (inventories.get(inv) == null) {
-                //Bukkit.getLogger().info("Loot generated");
                 inventories.put(e.getInventoryHolder().getInventory(), new MutableTriple<>(e.getInventoryHolder().getInventory().getStorageContents(), e.getLootTable(), e.getLootContext()));
             } else {
-                //Bukkit.getLogger().info("Loot regenerated");
                 inventories.remove(inv);
             }
         }
@@ -185,14 +185,12 @@ public class AbilitiesListener implements Listener {
 
             if (isEmpty(oldStorage)) {
                 // First Open so we save the actual initial Contents
-                //Bukkit.getLogger().info("First open");
                 inventories.put(inv, new MutableTriple<>(inv.getStorageContents(), lootTable, lootContext));
 
             } else if (Arrays.equals(oldStorage, inv.getStorageContents())) {
                 // This is the second Open
                 inv.clear();
                 lootTable.fillInventory(inv, new Random(), lootContext);
-                //Bukkit.getLogger().info("Same one");
             }
         }
     }
@@ -201,7 +199,6 @@ public class AbilitiesListener implements Listener {
     public void onLootChestClick(InventoryClickEvent e) {
         if (inventories.get(e.getClickedInventory()) != null) {
             inventories.remove(e.getClickedInventory());
-            //Bukkit.getLogger().info("Removed due to click");
         }
     }
 
@@ -210,10 +207,14 @@ public class AbilitiesListener implements Listener {
         Player p = e.getPlayer();
         if (state.getAbilities().getTeleporterAbilityList().contains(p)) {
             if ((p.getInventory().getItemInMainHand().getType() == Material.COMPASS && p.getInventory().getItemInMainHand().getItemMeta().isUnbreakable()) || (p.getInventory().getItemInOffHand().getType() == Material.COMPASS && p.getInventory().getItemInOffHand().getItemMeta().isUnbreakable())) {
-                CustomInventoryManager.openInventory(p, new TeleportInventory(state, p));
+                openTeleporter(p);
                 e.setCancelled(true);
             }
         }
+    }
+
+    // Hook: open whatever "teleport to teammates" GUI this game uses.
+    protected void openTeleporter(Player p) {
     }
 
     @EventHandler
@@ -223,15 +224,6 @@ public class AbilitiesListener implements Listener {
         }
     }
 
-    @EventHandler
-    public void onGappleConsume(PlayerItemConsumeEvent e) {
-        Player p = e.getPlayer();
-        if (e.getItem().getType() == Material.ENCHANTED_GOLDEN_APPLE && state.getAbilities().getGapperAbilityList().contains(p)) {
-            state.getManager().getTeam(p).extendLongestBingoLine();
-        }
-    }
-
-
     private boolean isEmpty(ItemStack[] contents) {
         return Arrays.stream(contents).allMatch(Objects::isNull);
     }
@@ -239,18 +231,18 @@ public class AbilitiesListener implements Listener {
     public void dropItems(int amount, Block block) {
         int i = 0;
         Random r = new Random();
-        List<Material> list = BingoLists.getList(state.getSetting());
+        List<Material> list = ItemLists.getList(state.getSetting());
         while (i < amount) {
             Material material = list.get(r.nextInt(list.size()));
             ItemStack newItem = new ItemStack(material);
             if (material == Material.ENCHANTED_BOOK) {
                 EnchantmentStorageMeta meta = (EnchantmentStorageMeta) newItem.getItemMeta();
-                BingoLists.getRandomEnchant(meta);
+                ItemLists.getRandomEnchant(meta);
                 newItem.setItemMeta(meta);
 
             } else if (material == Material.POTION || material == Material.SPLASH_POTION || material == Material.LINGERING_POTION || material == Material.TIPPED_ARROW) {
                 PotionMeta meta = (PotionMeta) newItem.getItemMeta();
-                BingoLists.getRandomPotion(state.getSetting(), meta);
+                ItemLists.getRandomPotion(state.getSetting(), meta);
                 newItem.setItemMeta(meta);
 
             }

@@ -1,25 +1,22 @@
-package me.mats.bingo.customInventory;
+package me.mats.common.customInventory;
 
 import me.mats.common.enums.Color;
-import me.mats.bingo.game.ingame.IngameState;
-import me.mats.bingo.message.BingoMessages;
-import me.mats.common.message.Message;
-import me.mats.common.message.MessageBuilder;
-import me.mats.common.customInventory.CustomInventory;
+import me.mats.common.game.GameManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.format.TextColor;
+import me.mats.common.message.Message;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scoreboard.Team;
 
-import javax.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,14 +25,14 @@ import static me.mats.common.message.MessageBuilder.roman;
 
 public class TeleportInventory extends CustomInventory<Inventory> {
 
-    private final IngameState state;
+    private final GameManager<?> manager;
 
-    public TeleportInventory(IngameState state, Player p) {
-        this.state = state;
+    public TeleportInventory(GameManager<?> manager, Player p) {
+        this.manager = manager;
 
-        inventory = Bukkit.createInventory(null, org.bukkit.event.inventory.InventoryType.HOPPER, Component.text("Teleporter", NamedTextColor.DARK_GRAY).decoration(TextDecoration.UNDERLINED, true));
+        inventory = Bukkit.createInventory(null, InventoryType.HOPPER, Component.text("Teleporter", NamedTextColor.DARK_GRAY).decoration(TextDecoration.UNDERLINED, true));
 
-        for (Player p2 : state.getManager().getTeam(p).getPlayers()) {
+        for (Player p2 : manager.getTeam(p).getPlayers()) {
             if (p != p2) {
                 ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD);
                 SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
@@ -71,14 +68,14 @@ public class TeleportInventory extends CustomInventory<Inventory> {
                             case NETHER -> dim = Component.text("N", NETHER.getTextColor());
                             case THE_END -> dim = Component.text("E", END.getTextColor());
                         }
-                        Team playerTeam = state.getManager().getBoard().getPlayerTeam(tpPlayer);
+                        Team playerTeam = manager.getBoard().getPlayerTeam(tpPlayer);
                         tpPlayer.playerListName(playerTeam.prefix().append(Component.text(tpPlayer.getName(), playerTeam.color())).append(Component.text(" ")).append(Message.O_BRACKET.getComponent()).append(dim).append(Message.C_BRACKET.getComponent()));
                     }
                     tpPlayer.teleport(toPlayer);
 
                 } else {
                     tpPlayer.closeInventory();
-                    tpPlayer.sendMessage(BingoMessages.bingo("Stop falling or taking damage!", NamedTextColor.RED));
+                    tpPlayer.sendMessage(manager.getBrandPrefix().append(Component.text("Stop falling or taking damage!", NamedTextColor.RED)));
                 }
             }
         }

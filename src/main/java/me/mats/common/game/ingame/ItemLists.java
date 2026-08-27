@@ -1,7 +1,6 @@
-package me.mats.bingo.game.ingame;
+package me.mats.common.game.ingame;
 
 
-import me.mats.bingo.game.ingame.BingoItem;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -10,8 +9,9 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 
 import java.util.*;
+import java.util.function.Supplier;
 
-public final class BingoLists extends ArrayList<Material> {
+public final class ItemLists {
 
     // TODO: Make the lists dynamic so new Items come automatically
     private final static Random random = new Random();
@@ -65,14 +65,14 @@ public final class BingoLists extends ArrayList<Material> {
         }
     }
 
-    public static Map<Material, BingoItem> getRandoms(ListType type, int amount) {
+    public static <T extends GameItem> Map<Material, T> getRandoms(ListType type, int amount, Supplier<T> factory) {
         List<Material> list = getList(type);
-        Map<Material, BingoItem> map = new HashMap<>(amount);
+        Map<Material, T> map = new HashMap<>(amount);
         PrimitiveIterator.OfInt randoms = random.ints(0, list.size()).distinct().limit(amount).iterator();
 
         for(int i = 0; i < amount; i++) {
             Material m = list.get(randoms.next());
-            map.put(m, new BingoItem(m));
+            map.put(m, factory.get());
         }
         return map;
     }

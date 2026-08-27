@@ -2,7 +2,7 @@ package me.mats.bingo.game;
 
 import me.mats.advancementinteraction.TeamAdvancements;
 import me.mats.common.enums.Color;
-import me.mats.bingo.game.ingame.IngameState;
+import me.mats.bingo.game.ingame.BingoIngameState;
 import me.mats.bingo.message.BingoMessage;
 import me.mats.bingo.message.BingoMessages;
 import me.mats.common.message.MessageBuilder;
@@ -56,7 +56,7 @@ public class BingoTeam extends Team {
             sendTitle(MessageBuilder.capitalize(advancementName.replace("_", " ")));
 
             // Check for Bingo
-            IngameState state = (IngameState) bingoManager.getGameState();
+            BingoIngameState state = (BingoIngameState) bingoManager.getGameState();
             int size = state.getSize();
             int halfSize = (int) Math.ceil((float) size/2);
 
@@ -188,7 +188,7 @@ public class BingoTeam extends Team {
 
     public void extendLongestBingoLine() {
         // 1. We need to check what the longest bingo line is
-        IngameState state = (IngameState) bingoManager.getGameState();
+        BingoIngameState state = (BingoIngameState) bingoManager.getGameState();
         int size = state.getSize();
 
         int maxLength = 0;

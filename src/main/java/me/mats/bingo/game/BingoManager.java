@@ -3,7 +3,7 @@ package me.mats.bingo.game;
 import me.mats.advancementinteraction.AdvancementInteraction;
 import me.mats.bingo.Bingo;
 import me.mats.common.enums.Color;
-import me.mats.bingo.game.ingame.IngameState;
+import me.mats.bingo.game.ingame.BingoIngameState;
 import me.mats.bingo.game.waiting.BingoWaitingState;
 import me.mats.common.GeneralListener;
 import me.mats.bingo.message.BingoMessage;
@@ -173,7 +173,7 @@ public class BingoManager extends GameManager<BingoTeam> {
     }
 
     public boolean inIngameState() {
-        return getGameState() instanceof IngameState;
+        return getGameState() instanceof BingoIngameState;
     }
 
     @Override

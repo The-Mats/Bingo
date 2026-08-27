@@ -5,12 +5,20 @@ import me.mats.advancementinteraction.TeamAdvancements;
 import me.mats.common.enums.Color;
 import me.mats.bingo.game.BingoManager;
 import me.mats.bingo.game.BingoTeam;
-import me.mats.common.game.GameState;
 import me.mats.bingo.game.finished.BingoFinishedState;
 import me.mats.bingo.message.BingoMessage;
 import me.mats.bingo.message.BingoMessages;
 import me.mats.common.message.Message;
 import me.mats.common.message.MessageBuilder;
+import me.mats.bingo.game.ingame.abilities.BingoAbilities;
+import me.mats.bingo.game.ingame.abilities.BingoAbilitiesListener;
+import me.mats.bingo.game.ingame.abilities.BingoAbilitiesMenuListener;
+import me.mats.bingo.game.ingame.spawn.BingoSpawnCountdown;
+import me.mats.bingo.game.ingame.spawn.BingoSpawnListener;
+import me.mats.bingo.game.ingame.spawn.SpawnProtectionListener;
+import me.mats.common.game.ingame.BackpackListener;
+import me.mats.common.game.ingame.IngameState;
+import me.mats.common.game.ingame.ItemLists;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -27,7 +35,7 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
-public class IngameState extends GameState<BingoManager> {
+public class BingoIngameState extends IngameState<BingoManager> {
 
     private Map<Material, BingoItem> bingoItemsMap = null;
     // This is needed for Gapper Ability
@@ -35,13 +43,13 @@ public class IngameState extends GameState<BingoManager> {
 
     // These are not changeable at this point
     private final int size;
-    private final BingoLists.ListType setting;
 
     private final BingoCollectListener bingoCollectListener;
     private final BackpackListener backpackListener;
-    private final SpawnListener spawnListener;
-    private final AbilitiesMenuListener abilitiesMenuListener;
-    private final AbilitiesListener abilitiesListener;
+    private final BingoSpawnListener spawnListener;
+    private final SpawnProtectionListener spawnProtectionListener;
+    private final BingoAbilitiesMenuListener abilitiesMenuListener;
+    private final BingoAbilitiesListener abilitiesListener;
     private final int extraAbilityPoints;
     private final int spawnTime;
 
@@ -49,8 +57,7 @@ public class IngameState extends GameState<BingoManager> {
     private List<ItemStack> fieldItems;
     private float[][] fieldPositions;
 
-    private final Abilities abilities = new Abilities();
-    private SpawnCountdown spawnCountdown;
+    private BingoSpawnCountdown spawnCountdown;
 
     // Elapsed-time action bar, shown for the whole ingame phase
     private int timerTaskId = -1;
@@ -58,18 +65,20 @@ public class IngameState extends GameState<BingoManager> {
     private float gradientPhase = 0F;
 
 
-    public IngameState(BingoManager manager, int size, BingoLists.ListType setting, int extraAbilityPoints, int spawnTime){
+    public BingoIngameState(BingoManager manager, int size, ItemLists.ListType setting, int extraAbilityPoints, int spawnTime){
         super.manager = manager;
         this.size = size;
         this.setting = setting;
+        this.abilities = new BingoAbilities();
         this.extraAbilityPoints = extraAbilityPoints;
         this.spawnTime = spawnTime;
 
         this.bingoCollectListener = new BingoCollectListener(this);
-        this.backpackListener = new BackpackListener(this);
-        this.spawnListener = new SpawnListener(this);
-        this.abilitiesMenuListener = new AbilitiesMenuListener(this);
-        this.abilitiesListener = new AbilitiesListener(this);
+        this.backpackListener = new BackpackListener(manager);
+        this.spawnListener = new BingoSpawnListener(this);
+        this.spawnProtectionListener = new SpawnProtectionListener(this);
+        this.abilitiesMenuListener = new BingoAbilitiesMenuListener(this);
+        this.abilitiesListener = new BingoAbilitiesListener(this);
         // Worldstuff here
 
 
@@ -82,7 +91,7 @@ public class IngameState extends GameState<BingoManager> {
 
         int size2 = size*size;
         // Get the itemsCh
-        bingoItemsMap = BingoLists.getRandoms(setting, size2);
+        bingoItemsMap = ItemLists.getRandoms(setting, size2, BingoItem::new);
         Material[] materialsList = bingoItemsMap.keySet().toArray(Material[]::new);
 
         // Generate field
@@ -124,7 +133,7 @@ public class IngameState extends GameState<BingoManager> {
             ItemStack item = new ItemStack(material);
             if (material == Material.ENCHANTED_BOOK) {
                 EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
-                BingoLists.getRandomEnchant(meta);
+                ItemLists.getRandomEnchant(meta);
 
                 item.setItemMeta(meta);
                 bingoItemsMap.get(material).setMeta(meta);
@@ -133,7 +142,7 @@ public class IngameState extends GameState<BingoManager> {
 
             } else if (material == Material.POTION || material == Material.SPLASH_POTION || material == Material.LINGERING_POTION || material == Material.TIPPED_ARROW) {
                 PotionMeta meta = (PotionMeta) item.getItemMeta();
-                BingoLists.getRandomPotion(setting, meta);
+                ItemLists.getRandomPotion(setting, meta);
 
                 Bukkit.getLogger().info(meta.getAsString());
 
@@ -175,7 +184,7 @@ public class IngameState extends GameState<BingoManager> {
     public void validateNewBingoPosition(int[] position) {
         boolean winnerExists = false;
         for (BingoTeam b : manager.getTeams()) {
-            if (!b.getPlayers().isEmpty() && abilities.getThiefAbilityList().contains(b.getPlayers().get(0))) {
+            if (!b.getPlayers().isEmpty() && getAbilities().getThiefAbilityList().contains(b.getPlayers().get(0))) {
                 boolean isWinner = b.hasWonWithNewPosition(position);
                 if (isWinner) {
                     winnerExists = true;
@@ -202,7 +211,7 @@ public class IngameState extends GameState<BingoManager> {
     // relog wiped from their client.
     @Override
     public void onPlayerReconnect(Player oldPlayer, Player newPlayer) {
-        abilities.replacePlayer(oldPlayer, newPlayer);
+        getAbilities().replacePlayer(oldPlayer, newPlayer);
 
         BingoTeam team = manager.getTeam(newPlayer);
         if (team == null || bingoItemsMap == null) {
@@ -231,13 +240,14 @@ public class IngameState extends GameState<BingoManager> {
 
         // Register required Listeners for Spawn
         Bukkit.getPluginManager().registerEvents(spawnListener, manager.getPlugin());
+        Bukkit.getPluginManager().registerEvents(spawnProtectionListener, manager.getPlugin());
         Bukkit.getPluginManager().registerEvents(abilitiesMenuListener, manager.getPlugin());
 
-        ItemStack abilities = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE);
-        ItemMeta meta = abilities.getItemMeta();
+        ItemStack abilitiesItem = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE);
+        ItemMeta meta = abilitiesItem.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
         meta.displayName(Component.text("Abilities", NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false));
-        abilities.setItemMeta(meta);
+        abilitiesItem.setItemMeta(meta);
 
         ItemStack crafting = new ItemStack(Material.CRAFTING_TABLE);
         meta = crafting.getItemMeta();
@@ -255,14 +265,14 @@ public class IngameState extends GameState<BingoManager> {
         for (Player p : manager.getPlayers()) {
             Team playerTeam = manager.getBoard().getPlayerTeam(p);
             p.playerListName(playerTeam.prefix().append(Component.text(p.getName(), playerTeam.color())).append(Component.text(" ")).append(Message.O_BRACKET.getComponent()).append(Component.text("O", Color.OVERWORLD.getTextColor())).append(Message.C_BRACKET.getComponent()));
-            p.getInventory().setItem(8, abilities);
+            p.getInventory().setItem(8, abilitiesItem);
             p.getInventory().setItem(0, crafting);
             p.getInventory().setItem(1, furnace);
 
             // Give Player all recipes
             p.discoverRecipes(recipeNames);
         }
-        spawnCountdown = new SpawnCountdown(manager, this);
+        spawnCountdown = new BingoSpawnCountdown(this);
         spawnCountdown.start(spawnTime);
     }
 
@@ -306,6 +316,7 @@ public class IngameState extends GameState<BingoManager> {
         HandlerList.unregisterAll(bingoCollectListener);
         HandlerList.unregisterAll(backpackListener);
         HandlerList.unregisterAll(spawnListener);
+        HandlerList.unregisterAll(spawnProtectionListener);
         HandlerList.unregisterAll(abilitiesListener);
         HandlerList.unregisterAll(abilitiesMenuListener);
 
@@ -351,25 +362,31 @@ public class IngameState extends GameState<BingoManager> {
 
         finalWinner.getAdvancement().sendFinalField(manager.getPlayers(), getOldAdvancements(), winField, fieldItems, fieldPositions);
 
-
-        // 3. Teleport
-        BingoFinishedState finishedState = new BingoFinishedState(manager, finalWinner, winField, fieldItems, fieldPositions);
-        for (Player p : manager.getPlayers()) {
-            p.setGameMode(GameMode.SURVIVAL);
-            p.teleport(finishedState.getWaitingWorld().getWorld().getSpawnLocation());
-            p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1F, 1F);
-        }
-
-        // Delete World and unregister Listeners
+        // Unregister ingame Listeners either way
         HandlerList.unregisterAll(bingoCollectListener);
         HandlerList.unregisterAll(backpackListener);
         HandlerList.unregisterAll(spawnListener);
+        HandlerList.unregisterAll(spawnProtectionListener);
         HandlerList.unregisterAll(abilitiesListener);
         Bukkit.getScheduler().cancelTask(timerTaskId);
 
-        // Start Finished State
-        manager.setGameState(finishedState);
-        manager.getGameState().start();
+        // 3. Teleport into the win celebration - or, if no waiting/finished world could be
+        // checked out, just end the game now. The winner announcement and advancement grid
+        // above have already been sent either way.
+        BingoFinishedState finishedState = new BingoFinishedState(manager, finalWinner, winField, fieldItems, fieldPositions);
+        if (finishedState.getWaitingWorld() != null) {
+            for (Player p : manager.getPlayers()) {
+                p.setGameMode(GameMode.SURVIVAL);
+                p.teleport(finishedState.getWaitingWorld().getWorld().getSpawnLocation());
+                p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1F, 1F);
+            }
+
+            manager.setGameState(finishedState);
+            manager.getGameState().start();
+        } else {
+            Bukkit.getLogger().warning("No waiting world available to show the win screen - ending " + manager.getName() + " immediately");
+            manager.teardownAndEnd();
+        }
     }
 
     @Override
@@ -391,11 +408,11 @@ public class IngameState extends GameState<BingoManager> {
         return backpackListener;
     }
 
-    public SpawnListener getSpawnListener() {
+    public BingoSpawnListener getSpawnListener() {
         return spawnListener;
     }
 
-    public AbilitiesListener getAbilitiesListener() {
+    public BingoAbilitiesListener getAbilitiesListener() {
         return abilitiesListener;
     }
 
@@ -403,16 +420,13 @@ public class IngameState extends GameState<BingoManager> {
         return bingoCollectListener;
     }
 
-    public AbilitiesMenuListener getAbilitiesMenuListener() {
+    public BingoAbilitiesMenuListener getAbilitiesMenuListener() {
         return abilitiesMenuListener;
     }
 
-    public Abilities getAbilities() {
-        return abilities;
-    }
-
-    public BingoLists.ListType getSetting() {
-        return setting;
+    @Override
+    public BingoAbilities getAbilities() {
+        return (BingoAbilities) abilities;
     }
 
     public int getExtraAbilityPoints() {
