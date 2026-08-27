@@ -22,6 +22,10 @@ public class FinishedCountdown {
 
     }
 
+    public void cancel() {
+        Bukkit.getScheduler().cancelTask(taskId);
+    }
+
     public void start(int countdownTime) {
         countdown = countdownTime;
 

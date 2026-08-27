@@ -8,7 +8,7 @@ import java.util.List;
 
 public enum Message {
 
-    BINGO(MessageBuilder.buildMsg(List.of("B","I","N","G","O"), List.of(0x0077b6, 0x0096c7, 0x00b4d8, 0x48cae4, 0x90e0ef))),
+    BINGO(MessageBuilder.buildMsg(List.of("B","I","N","G","O"), MessageBuilder.BINGO_GRADIENT)),
     PLAYERS(MessageBuilder.buildMsg(List.of("P","L","A","Y","E","R","S"), List.of(0xf2f270, 0xc3f891, 0x9cf9b6, 0x85f6d7, 0x88f0ed, 0x9ee7f6 , 0xb8def2))),
 
     O_BRACKET(Component.text("[", NamedTextColor.DARK_GRAY)),

@@ -17,7 +17,6 @@ import java.util.Objects;
 
 public final class Bingo extends JavaPlugin {
 
-    // TODO: Let players rejoin into Bingo after leaving, Stopping Bingo earlier
 
     @Override
     public void onEnable() {

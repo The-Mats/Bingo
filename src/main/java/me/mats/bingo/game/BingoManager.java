@@ -5,8 +5,11 @@ import me.mats.bingo.Bingo;
 import me.mats.bingo.enums.Color;
 import me.mats.bingo.game.ingame.IngameState;
 import me.mats.bingo.game.waiting.WaitingState;
+import me.mats.bingo.GeneralListener;
 import me.mats.bingo.message.Message;
+import me.mats.bingo.message.MessageBuilder;
 import me.mats.bingo.game.waiting.WaitingCountdown;
+import me.mats.bingo.world.ChunkPreloader;
 import me.mats.bingo.world.WorldManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -27,6 +30,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 public class BingoManager {
 
@@ -57,6 +61,19 @@ public class BingoManager {
         for (BingoManager bm : runningGames) {
             if (bm.getPlayers().contains(p)) {
                 return bm;
+            }
+        }
+        return null;
+    }
+
+    // Find a running game a player (by UUID) belongs to, even if their Player object is stale
+    // (e.g. they disconnected and are logging back in with a fresh Player instance)
+    public static BingoManager getBingoByUUID(UUID uuid) {
+        for (BingoManager bm : runningGames) {
+            for (Player p : bm.getPlayers()) {
+                if (p.getUniqueId().equals(uuid)) {
+                    return bm;
+                }
             }
         }
         return null;
@@ -164,6 +181,10 @@ public class BingoManager {
         world.setSpawnLocation(0,world.getSpawnLocation().getBlockY()+100, 0);
         worlds.add(world);
 
+        // Warm up the terrain below the spawn platform now, while there's still the full
+        // waiting lobby + spawn countdown ahead of us, instead of leaving it for players to trigger.
+        ChunkPreloader.preload(world, world.getSpawnLocation(), world.getViewDistance());
+
         gameState = new WaitingState(this);
         gameState.start();
         runningGames.add(this);
@@ -190,6 +211,128 @@ public class BingoManager {
             }
         }
 
+    }
+
+    // Remove a single player from this game (self-service leave). Ends the game entirely if it was the last player.
+    public void removePlayer(Player p) {
+        BingoTeam team = getTeam(p);
+        if (team != null) {
+            team.removePlayer(p);
+        }
+        defaultTeam.removePlayer(p);
+        players.remove(p);
+
+        List<NamespacedKey> recipeNames = new ArrayList<>();
+        Bukkit.recipeIterator().forEachRemaining(r -> recipeNames.add(((Keyed) r).getKey()));
+        p.undiscoverRecipes(recipeNames);
+
+        GeneralListener.setDefaults(p);
+        p.teleport(Bukkit.getWorld("world").getSpawnLocation());
+        p.setGameMode(GameMode.SURVIVAL);
+        p.clearActivePotionEffects();
+        p.getInventory().clear();
+        AdvancementInteraction.getInstance().removeBingoPlayer(p);
+
+        for (Player p2 : Bukkit.getOnlinePlayers()) {
+            if (!inBingo(p2)) {
+                p2.showPlayer(plugin, p);
+                p.showPlayer(plugin, p2);
+            } else {
+                p.hidePlayer(plugin, p2);
+                p2.hidePlayer(plugin, p);
+            }
+        }
+
+        // No players left, nothing more to play for
+        if (players.isEmpty()) {
+            gameState.abort();
+        }
+    }
+
+    // Re-attaches a returning player (fresh Player object after a relog) to their still-running game.
+    // Their world/position/inventory are already restored by vanilla; this just re-syncs our own bookkeeping.
+    public void reconnectPlayer(Player newPlayer) {
+        Player oldPlayer = null;
+        for (Player existing : players) {
+            if (existing.getUniqueId().equals(newPlayer.getUniqueId())) {
+                oldPlayer = existing;
+                break;
+            }
+        }
+        if (oldPlayer == null) {
+            return;
+        }
+
+        players.set(players.indexOf(oldPlayer), newPlayer);
+
+        BingoTeam team = null;
+        for (BingoTeam bt : bingoTeams) {
+            int idx = bt.getPlayers().indexOf(oldPlayer);
+            if (idx != -1) {
+                bt.getPlayers().set(idx, newPlayer);
+                team = bt;
+                break;
+            }
+        }
+
+        if (gameState instanceof IngameState ingameState) {
+            ingameState.getAbilities().replacePlayer(oldPlayer, newPlayer);
+        }
+        gameState.resendAdvancements(newPlayer);
+
+        AdvancementInteraction.getInstance().removeBingoPlayer(oldPlayer);
+        AdvancementInteraction.getInstance().addBingoPlayer(newPlayer);
+
+        newPlayer.setScoreboard(board);
+        if (team != null) {
+            newPlayer.displayName(Component.text(newPlayer.getName(), TextColor.color(team.getColorCode())));
+        } else {
+            newPlayer.displayName(Component.text(newPlayer.getName(), NamedTextColor.GRAY));
+        }
+        newPlayer.sendPlayerListFooter(Component.newline().append(Component.text("Playing ", NamedTextColor.GRAY)).append(Message.BINGO.getComponent()).append(Component.text(name.charAt(name.length()-1), TextColor.color(0xc2f4f9))));
+
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            if (players.contains(other)) {
+                newPlayer.showPlayer(plugin, other);
+                other.showPlayer(plugin, newPlayer);
+            } else {
+                newPlayer.hidePlayer(plugin, other);
+                other.hidePlayer(plugin, newPlayer);
+            }
+        }
+
+        newPlayer.sendMessage(MessageBuilder.bingo("Welcome back to Bingo"));
+    }
+
+    // Shared teardown used when a game is force-ended (abort) rather than reaching its natural finish
+    public void teardownAndEnd() {
+        World mainWorld = Bukkit.getWorld("world");
+        List<NamespacedKey> recipeNames = new ArrayList<>();
+        Bukkit.recipeIterator().forEachRemaining(r -> recipeNames.add(((Keyed) r).getKey()));
+
+        for (Player p : players) {
+            p.undiscoverRecipes(recipeNames);
+            GeneralListener.setDefaults(p);
+            p.teleport(mainWorld.getSpawnLocation());
+            p.setGameMode(GameMode.SURVIVAL);
+            p.clearActivePotionEffects();
+            p.getInventory().clear();
+            AdvancementInteraction.getInstance().removeBingoPlayer(p);
+
+            for (Player p2 : Bukkit.getOnlinePlayers()) {
+                if (!inBingo(p2)) {
+                    p2.showPlayer(plugin, p);
+                    p.showPlayer(plugin, p2);
+                }
+            }
+        }
+
+        for (Team t : board.getTeams()) {
+            t.unregister();
+        }
+
+        deleteWorlds();
+        endBingoGame();
     }
 
     public void invitePlayers() {

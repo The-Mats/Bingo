@@ -33,6 +33,18 @@ public class Abilities {
     private final List<Player> thiefAbilityList = new ArrayList<>();
     private final List<Player> gapperAbilityList = new ArrayList<>();
 
+    // Swaps a stale Player reference (e.g. from before a relog) for the current one in every ability list
+    public void replacePlayer(Player oldPlayer, Player newPlayer) {
+        for (List<Player> list : List.of(movementAbilityList, looterAbilityList, looterAbilityList2, minerAbilityList, minerAbilityList2,
+                keepInventoryAbilityList, luckyDiamondsAbilityList, easterBunnyAbilityList, timeWizardAbilityList, teleporterAbilityList,
+                thiefAbilityList, gapperAbilityList)) {
+            int idx = list.indexOf(oldPlayer);
+            if (idx != -1) {
+                list.set(idx, newPlayer);
+            }
+        }
+    }
+
     public List<Player> getOtherList(Material mat) {
         return switch (mat) {
             case GOLDEN_SWORD -> looterAbilityList2;

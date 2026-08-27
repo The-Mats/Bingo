@@ -48,6 +48,12 @@ public class IngameState extends GameState {
     private float[][] fieldPositions;
 
     private final Abilities abilities = new Abilities();
+    private SpawnCountdown spawnCountdown;
+
+    // Elapsed-time action bar, shown for the whole ingame phase
+    private int timerTaskId = -1;
+    private long elapsedSeconds = 0;
+    private float gradientPhase = 0F;
 
 
     public IngameState(BingoManager manager, int size, BingoLists.ListType setting, int extraAbilityPoints, int spawnTime){
@@ -189,6 +195,28 @@ public class IngameState extends GameState {
         return null;
     }
 
+    @Override
+    public void resendAdvancements(Player p) {
+        BingoTeam team = manager.getTeam(p);
+        if (team == null || bingoItemsMap == null) {
+            return;
+        }
+
+        team.getAdvancement().sendRootAdvancement(p);
+        team.getAdvancement().sendAdvancements(List.of(p), fieldItems, fieldPositions, new ArrayList<>());
+
+        // Re-mark whatever this team already collected as done, since sendAdvancements alone only recreates the grid
+        boolean[][] field = team.getBingoField();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (field[i][j]) {
+                    String advancementName = getMaterialFromPosition(new int[]{i, j}).toString().toLowerCase();
+                    TeamAdvancements.grantAdvancement(List.of(p), "bingo", advancementName);
+                }
+            }
+        }
+    }
+
 
     @Override
     public void start() {
@@ -227,8 +255,54 @@ public class IngameState extends GameState {
             // Give Player all recipes
             p.discoverRecipes(recipeNames);
         }
-        SpawnCountdown countdown = new SpawnCountdown(manager, this);
-        countdown.start(spawnTime);
+        spawnCountdown = new SpawnCountdown(manager, this);
+        spawnCountdown.start(spawnTime);
+    }
+
+    // Starts the elapsed-time action bar. Called by SpawnCountdown once it releases players ("Go!"),
+    // not from start(), since the timer should track actual playtime, not the pre-game countdown.
+    public void startTimer() {
+        timerTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(manager.getPlugin(), this::tickTimer, 0, 20);
+    }
+
+    // Elapsed-time action bar, cycling through the bingo logo's blue-cyan palette as one solid color
+    private void tickTimer() {
+        Component comp = MessageBuilder.pulse(formatElapsedTime(elapsedSeconds), MessageBuilder.BINGO_GRADIENT, gradientPhase);
+        for (Player p : manager.getPlayers()) {
+            p.sendActionBar(comp);
+        }
+        elapsedSeconds++;
+        gradientPhase = (gradientPhase + 0.03F) % 1F;
+    }
+
+    private String formatElapsedTime(long totalSeconds) {
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return hours + "h " + minutes + "m " + seconds + "s";
+        } else if (minutes > 0) {
+            return minutes + "m " + seconds + "s";
+        } else {
+            return seconds + "s";
+        }
+    }
+
+    @Override
+    public void abort() {
+        if (spawnCountdown != null) {
+            spawnCountdown.cancel();
+        }
+        Bukkit.getScheduler().cancelTask(timerTaskId);
+
+        HandlerList.unregisterAll(bingoCollectListener);
+        HandlerList.unregisterAll(backpackListener);
+        HandlerList.unregisterAll(spawnListener);
+        HandlerList.unregisterAll(abilitiesListener);
+        HandlerList.unregisterAll(abilitiesMenuListener);
+
+        manager.teardownAndEnd();
     }
 
     @Override
@@ -272,7 +346,7 @@ public class IngameState extends GameState {
 
 
         // 3. Teleport
-        FinishedState finishedState = new FinishedState(manager, finalWinner);
+        FinishedState finishedState = new FinishedState(manager, finalWinner, winField, fieldItems, fieldPositions);
         for (Player p : manager.getPlayers()) {
             p.setGameMode(GameMode.SURVIVAL);
             p.teleport(finishedState.getWaitingWorld().getWorld().getSpawnLocation());
@@ -284,6 +358,7 @@ public class IngameState extends GameState {
         HandlerList.unregisterAll(backpackListener);
         HandlerList.unregisterAll(spawnListener);
         HandlerList.unregisterAll(abilitiesListener);
+        Bukkit.getScheduler().cancelTask(timerTaskId);
 
         // Start Finished State
         manager.setGameState(finishedState);

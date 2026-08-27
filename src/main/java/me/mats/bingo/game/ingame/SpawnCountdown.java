@@ -43,6 +43,10 @@ public class SpawnCountdown {
         elytra.setItemMeta(meta);
     }
 
+    public void cancel() {
+        Bukkit.getScheduler().cancelTask(taskId);
+    }
+
     public void start(int countdownTime) {
         countdown = countdownTime;
 
@@ -92,6 +96,7 @@ public class SpawnCountdown {
 
                 }
                 state.getAbilities().setInitialAbilities();
+                state.startTimer();
                 Bukkit.getScheduler().cancelTask(taskId);
             }
             countdown--;
