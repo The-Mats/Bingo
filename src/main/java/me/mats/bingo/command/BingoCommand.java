@@ -5,8 +5,9 @@ import me.mats.bingo.Bingo;
 import me.mats.bingo.game.ingame.BingoLists;
 import me.mats.bingo.game.BingoManager;
 import me.mats.bingo.game.ingame.IngameState;
-import me.mats.bingo.game.waiting.WaitingState;
-import me.mats.bingo.message.MessageBuilder;
+import me.mats.bingo.game.waiting.BingoWaitingState;
+import me.mats.bingo.message.BingoMessages;
+import me.mats.common.message.MessageBuilder;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -32,7 +33,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (sender instanceof Player p) {
             if (args.length == 1 && args[0].equalsIgnoreCase("create")) {
-                p.sendMessage(MessageBuilder.bingo("Starting Bingo..."));
+                p.sendMessage(BingoMessages.bingo("Starting Bingo..."));
                 plugin.startBingo();
 
             } else if (args.length == 2 && args[0].equalsIgnoreCase("join")) {
@@ -55,7 +56,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                 BingoManager bingo = BingoManager.getBingo(p);
                 if (bingo != null) {
                     bingo.removePlayer(p);
-                    p.sendMessage(MessageBuilder.bingo("You left the Bingo"));
+                    p.sendMessage(BingoMessages.bingo("You left the Bingo"));
                 } else {
                     p.sendMessage(MessageBuilder.error("You're not playing Bingo"));
                 }
@@ -63,7 +64,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
             } else if (args.length == 1 && args[0].equalsIgnoreCase("end")) {
                 BingoManager bingo = BingoManager.getBingo(p);
                 if (bingo != null) {
-                    bingo.sendChat(MessageBuilder.bingo("The Bingo was ended"));
+                    bingo.sendChat(BingoMessages.bingo("The Bingo was ended"));
                     bingo.getGameState().abort();
                 } else {
                     p.sendMessage(MessageBuilder.error("You're not playing Bingo"));
@@ -73,13 +74,13 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                 BingoManager bingo = BingoManager.getBingo(p);
                 if (bingo != null) {
                     if (bingo.inWaitingState()) {
-                        WaitingState wState = (WaitingState) bingo.getGameState();
+                        BingoWaitingState wState = (BingoWaitingState) bingo.getGameState();
                         // Checked that the player is in a Bingo in Waiting State
                         if (args[1].equalsIgnoreCase("size") && args.length == 3) {
                             try {
                                 int size = Integer.parseInt(args[2]);
                                 wState.setSize(size);
-                                p.sendMessage(MessageBuilder.bingo("Changed the Size to §e"+size));
+                                p.sendMessage(BingoMessages.bingo("Changed the Size to §e"+size));
                             } catch (NumberFormatException e) {
                                 p.sendMessage(MessageBuilder.error("Please enter a valid Size"));
                                 return true;
@@ -88,7 +89,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                             try {
                                 BingoLists.ListType type = BingoLists.ListType.valueOf(args[2].toUpperCase());
                                 wState.setSetting(type);
-                                p.sendMessage(MessageBuilder.bingo("Changed the Type to §e"+type));
+                                p.sendMessage(BingoMessages.bingo("Changed the Type to §e"+type));
                             } catch (IllegalArgumentException e) {
                                 p.sendMessage(MessageBuilder.error("Please enter a valid Type"));
                                 return true;
@@ -101,7 +102,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
 
                         if (args[1].equalsIgnoreCase("new") && args.length == 2){
                             iState.newBingoField();
-                            p.sendMessage(MessageBuilder.bingo("Created a new Bingo Field"));
+                            p.sendMessage(BingoMessages.bingo("Created a new Bingo Field"));
                         } else {
                             p.sendMessage(MessageBuilder.error("Wrong usage"));
                         }
@@ -118,14 +119,14 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                 BingoManager bingo = BingoManager.getBingo(p);
                 if (bingo != null) {
                     if (bingo.inWaitingState()) {
-                        WaitingState wState = (WaitingState) bingo.getGameState();
+                        BingoWaitingState wState = (BingoWaitingState) bingo.getGameState();
                         // Checked that the player is in a Bingo in Waiting State
                         if (args[1].equalsIgnoreCase("points") && args.length == 3) {
                             try {
                                 int points = Integer.parseInt(args[2]);
                                 if (points >= 0) {
                                     wState.setExtraAbilityPoints(points);
-                                    p.sendMessage(MessageBuilder.bingo("Changed the extra Ability points to §e"+points));
+                                    p.sendMessage(BingoMessages.bingo("Changed the extra Ability points to §e"+points));
                                 } else {
                                     p.sendMessage(MessageBuilder.error("Please enter a positive Number"));
                                 }
@@ -139,7 +140,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                                 int time = Integer.parseInt(args[2]);
                                 if (time > 10) {
                                     wState.setSpawnTime(time);
-                                    p.sendMessage(MessageBuilder.bingo("Changed the spawn time to §e"+time));
+                                    p.sendMessage(BingoMessages.bingo("Changed the spawn time to §e"+time));
                                 } else {
                                     p.sendMessage(MessageBuilder.error("Please enter a Number bigger than 10"));
                                 }

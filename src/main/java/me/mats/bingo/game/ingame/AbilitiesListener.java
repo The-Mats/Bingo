@@ -1,7 +1,7 @@
 package me.mats.bingo.game.ingame;
 
 
-import me.mats.bingo.customInventory.CustomInventoryManager;
+import me.mats.common.customInventory.CustomInventoryManager;
 import me.mats.bingo.customInventory.TeleportInventory;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;

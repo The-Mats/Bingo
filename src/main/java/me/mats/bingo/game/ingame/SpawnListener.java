@@ -6,10 +6,10 @@ import de.tr7zw.nbtinjector.javassist.tools.web.Viewer;
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import me.mats.bingo.Bingo;
-import me.mats.bingo.enums.Color;
+import me.mats.common.enums.Color;
 import me.mats.bingo.game.BingoManager;
 import me.mats.bingo.game.BingoTeam;
-import me.mats.bingo.message.Message;
+import me.mats.common.message.Message;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static me.mats.bingo.enums.Color.*;
+import static me.mats.common.enums.Color.*;
 
 public class SpawnListener implements Listener {
 

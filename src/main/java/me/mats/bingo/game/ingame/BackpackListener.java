@@ -1,7 +1,7 @@
 package me.mats.bingo.game.ingame;
 
 import io.papermc.paper.event.player.PlayerPickItemEvent;
-import me.mats.bingo.customInventory.CustomInventoryManager;
+import me.mats.common.customInventory.CustomInventoryManager;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

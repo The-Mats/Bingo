@@ -16,7 +16,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static me.mats.bingo.message.MessageBuilder.roman;
+import static me.mats.common.message.MessageBuilder.roman;
 
 public class Abilities {
 

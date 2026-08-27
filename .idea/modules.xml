@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bingo.iml" filepath="$PROJECT_DIR$/.idea/modules/bingo.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/bingo.main.iml" filepath="$PROJECT_DIR$/.idea/modules/bingo.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/me.mats.bingo.main.iml" filepath="$PROJECT_DIR$/.idea/modules/me.mats.bingo.main.iml" />
     </modules>

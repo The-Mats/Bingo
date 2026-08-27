@@ -1,9 +1,11 @@
 package me.mats.bingo.customInventory;
 
-import me.mats.bingo.enums.Color;
+import me.mats.common.enums.Color;
 import me.mats.bingo.game.ingame.IngameState;
-import me.mats.bingo.message.Message;
-import me.mats.bingo.message.MessageBuilder;
+import me.mats.bingo.message.BingoMessages;
+import me.mats.common.message.Message;
+import me.mats.common.message.MessageBuilder;
+import me.mats.common.customInventory.CustomInventory;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -21,8 +23,8 @@ import javax.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
 
-import static me.mats.bingo.enums.Color.*;
-import static me.mats.bingo.message.MessageBuilder.roman;
+import static me.mats.common.enums.Color.*;
+import static me.mats.common.message.MessageBuilder.roman;
 
 public class TeleportInventory extends CustomInventory<Inventory> {
 
@@ -76,7 +78,7 @@ public class TeleportInventory extends CustomInventory<Inventory> {
 
                 } else {
                     tpPlayer.closeInventory();
-                    tpPlayer.sendMessage(MessageBuilder.bingo("Stop falling or taking damage!", NamedTextColor.RED));
+                    tpPlayer.sendMessage(BingoMessages.bingo("Stop falling or taking damage!", NamedTextColor.RED));
                 }
             }
         }

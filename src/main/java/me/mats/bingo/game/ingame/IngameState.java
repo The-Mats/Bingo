@@ -2,13 +2,15 @@ package me.mats.bingo.game.ingame;
 
 
 import me.mats.advancementinteraction.TeamAdvancements;
-import me.mats.bingo.enums.Color;
+import me.mats.common.enums.Color;
 import me.mats.bingo.game.BingoManager;
 import me.mats.bingo.game.BingoTeam;
-import me.mats.bingo.game.GameState;
-import me.mats.bingo.game.finished.FinishedState;
-import me.mats.bingo.message.Message;
-import me.mats.bingo.message.MessageBuilder;
+import me.mats.common.game.GameState;
+import me.mats.bingo.game.finished.BingoFinishedState;
+import me.mats.bingo.message.BingoMessage;
+import me.mats.bingo.message.BingoMessages;
+import me.mats.common.message.Message;
+import me.mats.common.message.MessageBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -25,7 +27,7 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
-public class IngameState extends GameState {
+public class IngameState extends GameState<BingoManager> {
 
     private Map<Material, BingoItem> bingoItemsMap = null;
     // This is needed for Gapper Ability
@@ -108,7 +110,7 @@ public class IngameState extends GameState {
         }
 
         // Add Field per Team (Deep Copy)
-        for (BingoTeam team : manager.getBingoTeams()) {
+        for (BingoTeam team : manager.getTeams()) {
             boolean[][] copiedField = new boolean[bingoField.length][];
             for (int i = 0; i < bingoField.length; i++) {
                 copiedField[i] = bingoField[i].clone();
@@ -147,7 +149,7 @@ public class IngameState extends GameState {
         fieldItems = items;
         fieldPositions = positions;
         // Send Packets
-        for (BingoTeam bTeam : manager.getBingoTeams()) {
+        for (BingoTeam bTeam : manager.getTeams()) {
             bTeam.getAdvancement().sendAdvancements(bTeam.getPlayers(), items, positions, removeAdvancements);
         }
 
@@ -172,7 +174,7 @@ public class IngameState extends GameState {
 
     public void validateNewBingoPosition(int[] position) {
         boolean winnerExists = false;
-        for (BingoTeam b : manager.getBingoTeams()) {
+        for (BingoTeam b : manager.getTeams()) {
             if (!b.getPlayers().isEmpty() && abilities.getThiefAbilityList().contains(b.getPlayers().get(0))) {
                 boolean isWinner = b.hasWonWithNewPosition(position);
                 if (isWinner) {
@@ -195,15 +197,20 @@ public class IngameState extends GameState {
         return null;
     }
 
+    // Abilities are keyed off Player object identity, so a relog (fresh Player instance)
+    // needs its entries swapped over explicitly. Also resends the advancement-grid UI the
+    // relog wiped from their client.
     @Override
-    public void resendAdvancements(Player p) {
-        BingoTeam team = manager.getTeam(p);
+    public void onPlayerReconnect(Player oldPlayer, Player newPlayer) {
+        abilities.replacePlayer(oldPlayer, newPlayer);
+
+        BingoTeam team = manager.getTeam(newPlayer);
         if (team == null || bingoItemsMap == null) {
             return;
         }
 
-        team.getAdvancement().sendRootAdvancement(p);
-        team.getAdvancement().sendAdvancements(List.of(p), fieldItems, fieldPositions, new ArrayList<>());
+        team.getAdvancement().sendRootAdvancement(newPlayer);
+        team.getAdvancement().sendAdvancements(List.of(newPlayer), fieldItems, fieldPositions, new ArrayList<>());
 
         // Re-mark whatever this team already collected as done, since sendAdvancements alone only recreates the grid
         boolean[][] field = team.getBingoField();
@@ -211,7 +218,7 @@ public class IngameState extends GameState {
             for (int j = 0; j < size; j++) {
                 if (field[i][j]) {
                     String advancementName = getMaterialFromPosition(new int[]{i, j}).toString().toLowerCase();
-                    TeamAdvancements.grantAdvancement(List.of(p), "bingo", advancementName);
+                    TeamAdvancements.grantAdvancement(List.of(newPlayer), "bingo", advancementName);
                 }
             }
         }
@@ -267,7 +274,7 @@ public class IngameState extends GameState {
 
     // Elapsed-time action bar, cycling through the bingo logo's blue-cyan palette as one solid color
     private void tickTimer() {
-        Component comp = MessageBuilder.pulse(formatElapsedTime(elapsedSeconds), MessageBuilder.BINGO_GRADIENT, gradientPhase);
+        Component comp = MessageBuilder.pulse(formatElapsedTime(elapsedSeconds), BingoMessages.BINGO_GRADIENT, gradientPhase);
         for (Player p : manager.getPlayers()) {
             p.sendActionBar(comp);
         }
@@ -309,7 +316,7 @@ public class IngameState extends GameState {
     public void stop() {
         // 1. Determine Winner
         List<BingoTeam> winners = new ArrayList<>();
-        for (BingoTeam b : manager.getBingoTeams()) {
+        for (BingoTeam b : manager.getTeams()) {
             if (b.isWinner())
                 winners.add(b);
         }
@@ -317,7 +324,7 @@ public class IngameState extends GameState {
         if (winners.size() == 1) {
             finalWinner = winners.get(0);
             for (Player p : manager.getPlayers()) {
-                p.sendMessage(MessageBuilder.bingo(Component.text("Team "+finalWinner.getName(), TextColor.color(finalWinner.getColorCode())).append(Component.text(" got a ", Color.STD_COLOR.getTextColor()).append(Message.BINGO.getComponent()))));            }
+                p.sendMessage(BingoMessages.bingo(Component.text("Team "+finalWinner.getName(), TextColor.color(finalWinner.getColorCode())).append(Component.text(" got a ", Color.STD_COLOR.getTextColor()).append(BingoMessage.BINGO.getComponent()))));            }
         } else {
             int maxCollectedBingoItems = 0;
             for (BingoTeam b : winners) {
@@ -328,7 +335,7 @@ public class IngameState extends GameState {
                 }
             }
             for (Player p : manager.getPlayers()) {
-                p.sendMessage(MessageBuilder.bingo(Component.text("Multiple Teams got a ", Color.STD_COLOR.getTextColor()).append(Message.BINGO.getComponent()).append(MessageBuilder.buildMsg(List.of(" but ", "Team "+finalWinner.getName(), " has ", Integer.toString(maxCollectedBingoItems), " Bingo Advancements"), List.of(Color.STD_COLOR.getColorCode(), finalWinner.getColorCode(), Color.STD_COLOR.getColorCode(), NamedTextColor.YELLOW.value(), Color.STD_COLOR.getColorCode())))));
+                p.sendMessage(BingoMessages.bingo(Component.text("Multiple Teams got a ", Color.STD_COLOR.getTextColor()).append(BingoMessage.BINGO.getComponent()).append(MessageBuilder.buildMsg(List.of(" but ", "Team "+finalWinner.getName(), " has ", Integer.toString(maxCollectedBingoItems), " Bingo Advancements"), List.of(Color.STD_COLOR.getColorCode(), finalWinner.getColorCode(), Color.STD_COLOR.getColorCode(), NamedTextColor.YELLOW.value(), Color.STD_COLOR.getColorCode())))));
             }
         }
 
@@ -346,7 +353,7 @@ public class IngameState extends GameState {
 
 
         // 3. Teleport
-        FinishedState finishedState = new FinishedState(manager, finalWinner, winField, fieldItems, fieldPositions);
+        BingoFinishedState finishedState = new BingoFinishedState(manager, finalWinner, winField, fieldItems, fieldPositions);
         for (Player p : manager.getPlayers()) {
             p.setGameMode(GameMode.SURVIVAL);
             p.teleport(finishedState.getWaitingWorld().getWorld().getSpawnLocation());
@@ -369,7 +376,7 @@ public class IngameState extends GameState {
     public void addPlayer(Player p) {
         p.teleport(manager.getWorld().getSpawnLocation());
         p.setGameMode(GameMode.SPECTATOR);
-        p.sendMessage(MessageBuilder.bingo("You are now spectating"));
+        p.sendMessage(BingoMessages.bingo("You are now spectating"));
     }
 
     public int getSize() {

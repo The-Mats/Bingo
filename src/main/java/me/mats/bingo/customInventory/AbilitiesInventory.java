@@ -2,6 +2,8 @@ package me.mats.bingo.customInventory;
 
 import me.mats.bingo.game.BingoTeam;
 import me.mats.bingo.game.ingame.IngameState;
+import me.mats.common.customInventory.CustomInventory;
+import me.mats.common.customInventory.CustomInventoryManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -15,7 +17,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import static me.mats.bingo.message.MessageBuilder.roman;
+import static me.mats.common.message.MessageBuilder.roman;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -2,7 +2,7 @@ package me.mats.bingo.game.ingame;
 
 import me.mats.bingo.game.BingoTeam;
 import me.mats.bingo.customInventory.AbilitiesInventory;
-import me.mats.bingo.customInventory.CustomInventoryManager;
+import me.mats.common.customInventory.CustomInventoryManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -26,8 +26,8 @@ public class AbilitiesMenuListener implements Listener {
 
     public AbilitiesMenuListener(IngameState state) {
         this.state = state;
-        bingoTeamToGUI = new HashMap<>(state.getManager().getBingoTeams().size());
-        for (BingoTeam bT : state.getManager().getBingoTeams()) {
+        bingoTeamToGUI = new HashMap<>(state.getManager().getTeams().size());
+        for (BingoTeam bT : state.getManager().getTeams()) {
             bingoTeamToGUI.put(bT, new AbilitiesInventory(state, bT));
         }
     }
