@@ -1,11 +1,9 @@
 package me.mats.common.customInventory;
 
-import me.mats.common.enums.Color;
 import me.mats.common.game.GameManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.format.TextColor;
 import me.mats.common.message.Message;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

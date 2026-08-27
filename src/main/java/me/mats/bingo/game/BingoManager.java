@@ -85,9 +85,9 @@ public class BingoManager extends GameManager<BingoTeam> {
         super(nextName(), plugin);
         worlds.add(getWorld());
 
+        runningGames.add(this);
         setGameState(new BingoWaitingState(this));
         getGameState().start();
-        runningGames.add(this);
     }
 
     @Override

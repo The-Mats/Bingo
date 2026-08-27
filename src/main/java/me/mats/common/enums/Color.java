@@ -1,7 +1,6 @@
 package me.mats.common.enums;
 
 
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 
 public enum Color {
