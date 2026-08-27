@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   minecraft:
-    image: itzg/minecraft-server
+    image: itzg/minecraft-server:java17
     tty: true
     stdin_open: true
     ports:
@@ -21,3 +21,4 @@ services:
       INIT_MEMORY: 4G
       MAX_MEMORY: 6G
       VIEW_DISTANCE: 20
+      JVM_OPTS: "--add-opens java.base/java.lang=ALL-UNNAMED"

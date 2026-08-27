@@ -33,7 +33,7 @@ dependencies {
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.2.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
     compileOnly 'de.tr7zw:item-nbt-api-plugin:2.12.0'
-    compileOnly files('X:/Users/matsp/Documents/MinecraftPlugins/Finished Plugins/AdvancementInteraction1.20.2.jar')
+    compileOnly files('docker/data/plugins/AdvancementInteraction1.20.2.jar')
 }
 
 application {
