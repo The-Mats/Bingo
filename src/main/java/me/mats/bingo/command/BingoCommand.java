@@ -51,6 +51,24 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                 } else {
                     p.sendMessage(MessageBuilder.error("Already playing Bingo"));
                 }
+            } else if (args.length == 1 && args[0].equalsIgnoreCase("leave")) {
+                BingoManager bingo = BingoManager.getBingo(p);
+                if (bingo != null) {
+                    bingo.removePlayer(p);
+                    p.sendMessage(MessageBuilder.bingo("You left the Bingo"));
+                } else {
+                    p.sendMessage(MessageBuilder.error("You're not playing Bingo"));
+                }
+
+            } else if (args.length == 1 && args[0].equalsIgnoreCase("end")) {
+                BingoManager bingo = BingoManager.getBingo(p);
+                if (bingo != null) {
+                    bingo.sendChat(MessageBuilder.bingo("The Bingo was ended"));
+                    bingo.getGameState().abort();
+                } else {
+                    p.sendMessage(MessageBuilder.error("You're not playing Bingo"));
+                }
+
             } else if (args.length >= 2 && args[0].equalsIgnoreCase("field")) {
                 BingoManager bingo = BingoManager.getBingo(p);
                 if (bingo != null) {
@@ -160,6 +178,8 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
             }
             if (bingo != null) {
                 tabComplete.add("field");
+                tabComplete.add("leave");
+                tabComplete.add("end");
             }
             if (bingo != null && bingo.inWaitingState()) {
                 tabComplete.add("ability");

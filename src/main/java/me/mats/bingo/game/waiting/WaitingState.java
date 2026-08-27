@@ -44,6 +44,10 @@ public class WaitingState extends GameState {
     private final TeamAdvancements defAdvancementTab = new TeamAdvancements("bingo", "white_concrete");
 
     private final WaitingWorldListener listener;
+
+    // Keeps the "5x5 - Default" action bar visible above the hotbar (action bar text fades if not resent)
+    private int actionBarTaskId = -1;
+
     public WaitingState(BingoManager manager) {
         super.manager = manager;
         // Prepare Team Selector
@@ -84,6 +88,25 @@ public class WaitingState extends GameState {
         // Send invitation to all Players not in a Bingo game
          waitingCountdown.start(90, true);
          manager.invitePlayers();
+
+        actionBarTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(manager.getPlugin(), this::sendSizeTypeActionBar, 0, 20);
+    }
+
+    @Override
+    public void abort() {
+        waitingCountdown.stop();
+        Bukkit.getScheduler().cancelTask(actionBarTaskId);
+        HandlerList.unregisterAll(listener);
+
+        for (BingoTeam bTeam : manager.getBingoTeams()) {
+            bTeam.removeWaitingTeam();
+        }
+
+        if (waitingWorld != null) {
+            waitingWorld.free();
+        }
+
+        manager.teardownAndEnd();
     }
 
     @Override
@@ -111,12 +134,23 @@ public class WaitingState extends GameState {
         }
         // Unregister Listener
         HandlerList.unregisterAll(listener);
+        Bukkit.getScheduler().cancelTask(actionBarTaskId);
 
         waitingWorld.free();
 
         // New State and start it
         manager.setGameState(new IngameState(manager, size, setting, extraAbilityPoints, spawnTime));
         manager.getGameState().start();
+    }
+
+    @Override
+    public void resendAdvancements(Player p) {
+        BingoTeam team = manager.getTeam(p);
+        if (team != null) {
+            team.getAdvancement().sendRootAdvancement(p);
+        } else {
+            defAdvancementTab.sendRootAdvancement(p);
+        }
     }
 
     @Override
@@ -128,7 +162,28 @@ public class WaitingState extends GameState {
         p.setLevel(waitingCountdown.getRemainingTime());
         p.setExp((float) waitingCountdown.getRemainingTime() / waitingCountdown.getMaxTime());
         defAdvancementTab.sendRootAdvancement(p);
+        p.sendActionBar(buildSizeTypeComponent());
         p.sendMessage(MessageBuilder.bingo("Welcome to Bingo"));
+    }
+
+    // "5x5 - Default" style indicator shown above the hotbar while waiting
+    private Component buildSizeTypeComponent() {
+        TextColor typeColor = switch (setting) {
+            case DEFAULT -> Color.OVERWORLD.getTextColor();
+            case HARD -> Color.NETHER.getTextColor();
+            case END -> Color.END.getTextColor();
+        };
+
+        return Component.text(size + "x" + size, Color.COMMAND_YELLOW.getTextColor())
+                .append(Component.text(" - ", Color.STD_COLOR.getTextColor()))
+                .append(Component.text(MessageBuilder.capitalize(setting.toString().toLowerCase()), typeColor));
+    }
+
+    private void sendSizeTypeActionBar() {
+        Component comp = buildSizeTypeComponent();
+        for (Player p : manager.getPlayers()) {
+            p.sendActionBar(comp);
+        }
     }
 
     // Getters and Setters
@@ -138,10 +193,12 @@ public class WaitingState extends GameState {
 
     public void setSetting(BingoLists.ListType setting) {
         this.setting = setting;
+        sendSizeTypeActionBar();
     }
 
     public void setSize(int size) {
         this.size = size;
+        sendSizeTypeActionBar();
     }
 
     public void setExtraAbilityPoints(int extraAbilityPoints) {

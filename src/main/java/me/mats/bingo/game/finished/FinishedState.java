@@ -17,6 +17,7 @@ import net.kyori.adventure.title.TitlePart;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Team;
 
 import java.time.Duration;
@@ -27,10 +28,19 @@ public class FinishedState extends GameState {
     private WaitingWorld waitingWorld;
     private final FinishedListener listener;
     private final BingoTeam winner;
+    private FinishedCountdown finishedCountdown;
 
-    public FinishedState(BingoManager manager, BingoTeam winner) {
+    // Kept around only so a relogging player can have the winning field re-sent to them
+    private final List<String> winField;
+    private final List<ItemStack> fieldItems;
+    private final float[][] fieldPositions;
+
+    public FinishedState(BingoManager manager, BingoTeam winner, List<String> winField, List<ItemStack> fieldItems, float[][] fieldPositions) {
         super.manager = manager;
         this.winner = winner;
+        this.winField = winField;
+        this.fieldItems = fieldItems;
+        this.fieldPositions = fieldPositions;
 
         if (WaitingWorld.getAvailable().length >= 1) {
             this.waitingWorld = new WaitingWorld();
@@ -52,7 +62,7 @@ public class FinishedState extends GameState {
             loc.getBlock().setType(Material.valueOf(winner.getName().toUpperCase()+"_WOOL"));
         }
 
-        FinishedCountdown finishedCountdown = new FinishedCountdown(manager, this);
+        finishedCountdown = new FinishedCountdown(manager, this);
         finishedCountdown.start(60);
 
         for (Player p : manager.getPlayers()) {
@@ -88,6 +98,14 @@ public class FinishedState extends GameState {
 
 
     @Override
+    public void abort() {
+        if (finishedCountdown != null) {
+            finishedCountdown.cancel();
+        }
+        stop();
+    }
+
+    @Override
     public void stop() {
         World mainWorld = Bukkit.getWorld("world");
 
@@ -101,6 +119,9 @@ public class FinishedState extends GameState {
 
             GeneralListener.setDefaults(p);
             p.teleport(mainWorld.getSpawnLocation());
+            p.setGameMode(GameMode.SURVIVAL);
+            p.clearActivePotionEffects();
+            p.getInventory().clear();
             AdvancementInteraction.getInstance().removeBingoPlayer(p);
 
             // Show Lobby Players again
@@ -128,6 +149,11 @@ public class FinishedState extends GameState {
     public void addPlayer(Player p) {
         p.sendMessage(MessageBuilder.bingo("Ending soon"));
         p.teleport(waitingWorld.getWorld().getSpawnLocation());
+    }
+
+    @Override
+    public void resendAdvancements(Player p) {
+        winner.getAdvancement().sendFinalField(List.of(p), new ArrayList<>(), winField, fieldItems, fieldPositions);
     }
 
     public WaitingWorld getWaitingWorld() {

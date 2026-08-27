@@ -48,6 +48,16 @@ public class GeneralListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+
+        e.joinMessage(MessageBuilder.buildMsg(List.of("[", "+", "] "), List.of(NamedTextColor.GREEN.value(), NamedTextColor.DARK_GREEN.value(), NamedTextColor.GREEN.value())).append(Component.text(p.getName(), NamedTextColor.GRAY)));
+
+        // Relogging mid-game: reattach to the running game instead of dropping them into the lobby
+        BingoManager runningGame = BingoManager.getBingoByUUID(p.getUniqueId());
+        if (runningGame != null) {
+            runningGame.reconnectPlayer(p);
+            return;
+        }
+
         p.setScoreboard(standardBoard);
         p.sendPlayerListHeaderAndFooter(Message.O_BRACKET.getComponent().append(Message.PLAYERS.getComponent()).append(Message.C_BRACKET.getComponent()).appendNewline(), Component.newline().append(Component.text("Playing ", NamedTextColor.GRAY)).append(Component.text("LOBBY1", NamedTextColor.YELLOW)));
 
@@ -66,9 +76,6 @@ public class GeneralListener implements Listener {
                 p2.hidePlayer(Bingo.getInstance(), p);
             }
         }
-
-        e.joinMessage(MessageBuilder.buildMsg(List.of("[", "+", "] "), List.of(NamedTextColor.GREEN.value(), NamedTextColor.DARK_GREEN.value(), NamedTextColor.GREEN.value())).append(Component.text(p.getName(), NamedTextColor.GRAY)));
-
     }
 
     @EventHandler

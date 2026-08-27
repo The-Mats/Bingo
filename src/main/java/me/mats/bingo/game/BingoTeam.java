@@ -85,7 +85,9 @@ public class BingoTeam {
         team.removePlayer(p);
         players.remove(p);
 
-        waitingTeam.removePlayer(p);
+        if (waitingTeam != null) {
+            waitingTeam.removePlayer(p);
+        }
     }
 
     public void addPlayer(Player p) {
