@@ -4,14 +4,14 @@ import me.mats.common.game.ingame.IngameState;
 import me.mats.common.game.ingame.ItemLists;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDropItemEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -20,6 +20,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
@@ -43,6 +44,8 @@ public class AbilitiesListener implements Listener {
     private final static List<Material> hostileSpawnEggs = Arrays.stream(EntityType.values()).filter(AbilitiesListener::isHostile).map(AbilitiesListener::toMaterial).filter(Objects::nonNull).toList();
 
     private final Map<Inventory, Triple<ItemStack[], LootTable, LootContext>> inventories = new HashMap<>();
+
+    private final Set<UUID> pendingPearlDamage = new HashSet<>(); // Track if an ender pearl was used to stop the damage
 
     public static Material toMaterial(EntityType et) {
         try {
@@ -224,7 +227,42 @@ public class AbilitiesListener implements Listener {
         }
     }
 
-    private boolean isEmpty(ItemStack[] contents) {
+    @EventHandler
+    public void onPearlTeleport(PlayerTeleportEvent e) {
+        if (e.getCause() == PlayerTeleportEvent.TeleportCause.ENDER_PEARL && state.getAbilities().getEndermanAbilityList().contains(e.getPlayer())) {
+            Player p = e.getPlayer();
+            pendingPearlDamage.add(p.getUniqueId());
+            World world = p.getWorld();
+            int x_change = e.getTo().getBlockX() - e.getFrom().getBlockX();
+            int z_change = e.getTo().getBlockZ() - e.getFrom().getBlockZ();
+
+            if (Math.random() < 0.50) {
+                Location teleport_to;
+                if (Math.abs(x_change) >= Math.abs(z_change)) {
+                    teleport_to = e.getFrom().add(Math.signum(x_change) * 1000, 0, 0);
+
+                } else {
+                    teleport_to = e.getFrom().add(0, 0, Math.signum(z_change) * 1000);
+                }
+                teleport_to.setY(world.getHighestBlockAt(teleport_to).getY()+1);
+                p.teleport(teleport_to);
+                p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.MASTER, 1, 1);
+
+                e.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPearlFallDamage(EntityDamageEvent e) {
+        if (e.getEntity() instanceof Player p && e.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            if (pendingPearlDamage.remove(p.getUniqueId())) {
+                e.setCancelled(true);
+            }
+        }
+    }
+
+        private boolean isEmpty(ItemStack[] contents) {
         return Arrays.stream(contents).allMatch(Objects::isNull);
     }
 

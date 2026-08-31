@@ -33,14 +33,14 @@ public class BingoAbilitiesInventory extends AbilitiesInventory {
         lore.add(Component.text(""));
         lore.add(roman("Snatch the Win with the help of other teams", NamedTextColor.GRAY));
         lore.add(roman(" - If only one Item is missing for a Bingo and another Team has this you win", NamedTextColor.GREEN));
-        lore.add(roman(" - Invisibility", NamedTextColor.GREEN));
+        lore.add(roman(" - Bad Luck (Part of the deal)", NamedTextColor.GREEN));
         lore.add(Component.text(""));
         lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
         lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
         meta.lore(lore);
 
         helmet.setItemMeta(meta);
-        inventory.setItem(8, helmet);
+        inventory.setItem(12, helmet);
 
         ItemStack gap = new ItemStack(Material.GOLDEN_APPLE);
         meta = gap.getItemMeta();
@@ -60,6 +60,6 @@ public class BingoAbilitiesInventory extends AbilitiesInventory {
         meta.lore(lore);
 
         gap.setItemMeta(meta);
-        inventory.setItem(9, gap);
+        inventory.setItem(13, gap);
     }
 }

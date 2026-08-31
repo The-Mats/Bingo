@@ -194,6 +194,29 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
 
         compass.setItemMeta(meta);
         inventory.setItem(7, compass);
+
+
+        ItemStack pearl = new ItemStack(Material.ENDER_PEARL);
+        meta = pearl.getItemMeta();
+
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(Component.text("Enderman", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+        lore = new ArrayList<>();
+        lore.add(roman("Level: 0", NamedTextColor.YELLOW));
+        lore.add(Component.text(""));
+        lore.add(roman("Learned to port by looking at those beautiful eyes", NamedTextColor.GRAY));
+        lore.add(roman(" - Throwing an Ender Pearl has a 50% Chance to port you 1000 Blocks in the thrown direction",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - No damage when using Ender Pearls",
+                NamedTextColor.GREEN));
+        lore.add(Component.text(""));
+        lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
+        lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
+        meta.lore(lore);
+
+        pearl.setItemMeta(meta);
+        inventory.setItem(8, pearl);
     }
 
     protected Component title() {

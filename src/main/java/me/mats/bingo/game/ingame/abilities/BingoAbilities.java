@@ -41,7 +41,7 @@ public class BingoAbilities extends Abilities {
     public void setInitialAbilities() {
         super.setInitialAbilities();
         for (Player p : thiefAbilityList) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.UNLUCK, PotionEffect.INFINITE_DURATION, 0));
         }
         for (Player p : gapperAbilityList) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 1));
@@ -52,7 +52,7 @@ public class BingoAbilities extends Abilities {
     public void setAbilities(Player p) {
         super.setAbilities(p);
         if (thiefAbilityList.contains(p)) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.UNLUCK, PotionEffect.INFINITE_DURATION, 0));
         }
         if (gapperAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 1));

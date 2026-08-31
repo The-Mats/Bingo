@@ -34,6 +34,7 @@ public class Abilities {
     protected final List<Player> easterBunnyAbilityList = new ArrayList<>();
     protected final List<Player> timeWizardAbilityList = new ArrayList<>();
     protected final List<Player> teleporterAbilityList = new ArrayList<>();
+    protected final List<Player> endermanAbilityList = new ArrayList<>();
 
     // Swaps a stale Player reference (e.g. from before a relog) for the current one in every
     // ability list. A subclass adding its own lists should override and call super first.
@@ -69,6 +70,7 @@ public class Abilities {
             case TURTLE_EGG -> easterBunnyAbilityList;
             case CLOCK -> timeWizardAbilityList;
             case COMPASS -> teleporterAbilityList;
+            case ENDER_PEARL -> endermanAbilityList;
             default -> null;
         };
     }
@@ -177,4 +179,6 @@ public class Abilities {
     public List<Player> getMinerAbilityList2() {
         return minerAbilityList2;
     }
+
+    public List<Player> getEndermanAbilityList() { return endermanAbilityList; }
 }
