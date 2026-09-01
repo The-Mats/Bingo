@@ -217,6 +217,55 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
 
         pearl.setItemMeta(meta);
         inventory.setItem(8, pearl);
+
+
+        ItemStack spy = new ItemStack(Material.SPYGLASS);
+        meta = spy.getItemMeta();
+
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(Component.text("Stalker", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+        lore = new ArrayList<>();
+        lore.add(roman("Level: 0", NamedTextColor.YELLOW));
+        lore.add(Component.text(""));
+        lore.add(roman("No one here, nothing to see", NamedTextColor.GRAY));
+        lore.add(roman(" - Get a Spyglass",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - Get 5 Wandering Trader Eggs",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - Invisibility",
+                NamedTextColor.GREEN));
+        lore.add(Component.text(""));
+        lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
+        lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
+        meta.lore(lore);
+
+        spy.setItemMeta(meta);
+        inventory.setItem(9, spy);
+
+        ItemStack bow = new ItemStack(Material.BOW);
+        meta = bow.getItemMeta();
+
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(Component.text("Sniper", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+        lore = new ArrayList<>();
+        lore.add(roman("Level: 0", NamedTextColor.YELLOW));
+        lore.add(Component.text(""));
+        lore.add(roman("I hope one arrow is enough", NamedTextColor.GRAY));
+        lore.add(roman(" - Get a Bow with Infinity",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - Get one Arrow",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - Resistance I",
+                NamedTextColor.GREEN));
+        lore.add(Component.text(""));
+        lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
+        lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
+        meta.lore(lore);
+
+        bow.setItemMeta(meta);
+        inventory.setItem(10, bow);
     }
 
     protected Component title() {

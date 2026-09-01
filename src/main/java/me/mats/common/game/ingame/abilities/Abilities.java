@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -35,6 +36,8 @@ public class Abilities {
     protected final List<Player> timeWizardAbilityList = new ArrayList<>();
     protected final List<Player> teleporterAbilityList = new ArrayList<>();
     protected final List<Player> endermanAbilityList = new ArrayList<>();
+    protected final List<Player> stalkerAbilityList = new ArrayList<>();
+    protected final List<Player> sniperAbilityList = new ArrayList<>();
 
     // Swaps a stale Player reference (e.g. from before a relog) for the current one in every
     // ability list. A subclass adding its own lists should override and call super first.
@@ -71,6 +74,8 @@ public class Abilities {
             case CLOCK -> timeWizardAbilityList;
             case COMPASS -> teleporterAbilityList;
             case ENDER_PEARL -> endermanAbilityList;
+            case SPYGLASS -> stalkerAbilityList;
+            case BOW -> sniperAbilityList;
             default -> null;
         };
     }
@@ -98,6 +103,36 @@ public class Abilities {
         }
         for (Player p : timeWizardAbilityList) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, PotionEffect.INFINITE_DURATION, 4));
+        }
+        for (Player p : stalkerAbilityList) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
+
+            ItemStack spyglass = new ItemStack(Material.SPYGLASS);
+            ItemMeta spyglassMeta = spyglass.getItemMeta();
+            spyglassMeta.setUnbreakable(true);
+            spyglassMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            spyglass.setItemMeta(spyglassMeta);
+            p.getInventory().setItem(0, spyglass);
+
+            p.getInventory().setItem(1, new ItemStack(Material.WANDERING_TRADER_SPAWN_EGG, 5));
+        }
+        for (Player p : sniperAbilityList) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
+
+            ItemStack bow = new ItemStack(Material.BOW);
+            ItemMeta bowMeta = bow.getItemMeta();
+            bowMeta.setUnbreakable(true);
+            bowMeta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            bowMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            bow.setItemMeta(bowMeta);
+            p.getInventory().addItem(bow);
+
+            ItemStack arrow = new ItemStack(Material.ARROW);
+            ItemMeta arrowMeta = arrow.getItemMeta();
+            arrowMeta.setUnbreakable(true);
+            arrowMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            arrow.setItemMeta(arrowMeta);
+            p.getInventory().addItem(arrow);
         }
 
         ItemStack compass = new ItemStack(Material.COMPASS);
@@ -137,6 +172,12 @@ public class Abilities {
         }
         if (timeWizardAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, PotionEffect.INFINITE_DURATION, 4));
+        }
+        if ( stalkerAbilityList.contains(p)) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
+        }
+        if (sniperAbilityList.contains(p)) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
         }
     }
 
@@ -181,4 +222,8 @@ public class Abilities {
     }
 
     public List<Player> getEndermanAbilityList() { return endermanAbilityList; }
+
+    public List<Player> getStalkerAbilityList() { return stalkerAbilityList; }
+
+    public List<Player> getSniperAbilityList() { return sniperAbilityList; }
 }
