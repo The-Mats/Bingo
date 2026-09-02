@@ -291,6 +291,26 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
 
         fire.setItemMeta(meta);
         inventory.setItem(11, fire);
+
+        ItemStack fireworks = new ItemStack(Material.FIREWORK_ROCKET);
+        meta = fireworks.getItemMeta();
+
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(Component.text("Rocketman", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+        lore = new ArrayList<>();
+        lore.add(roman("Level: 0", NamedTextColor.YELLOW));
+        lore.add(Component.text(""));
+        lore.add(roman("And I think it's gonna be a long, long time", NamedTextColor.GRAY));
+        lore.add(roman(" - Get 5 Fireworks at the start", NamedTextColor.GREEN));
+        lore.add(roman(" - Get 1 Firework on every respawn", NamedTextColor.GREEN));
+        lore.add(Component.text(""));
+        lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
+        lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
+        meta.lore(lore);
+
+        fireworks.setItemMeta(meta);
+        inventory.setItem(12, fireworks);
     }
 
     protected Component title() {

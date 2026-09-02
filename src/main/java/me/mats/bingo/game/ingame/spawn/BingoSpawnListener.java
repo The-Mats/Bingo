@@ -21,5 +21,6 @@ public class BingoSpawnListener extends SpawnListener {
     @Override
     protected void onPlayerRespawned(Player p) {
         state.getAbilities().setAbilities(p);
+        state.getAbilities().grantRespawnItems(p);
     }
 }

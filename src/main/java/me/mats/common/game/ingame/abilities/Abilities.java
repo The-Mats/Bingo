@@ -39,6 +39,7 @@ public class Abilities {
     protected final List<Player> stalkerAbilityList = new ArrayList<>();
     protected final List<Player> sniperAbilityList = new ArrayList<>();
     protected final List<Player> pyroAbilityList = new ArrayList<>();
+    protected final List<Player> rocketmanAbilityList = new ArrayList<>();
 
     // Swaps a stale Player reference (e.g. from before a relog) for the current one in every
     // ability list. A subclass adding its own lists should override and call super first.
@@ -78,6 +79,7 @@ public class Abilities {
             case SPYGLASS -> stalkerAbilityList;
             case BOW -> sniperAbilityList;
             case FIRE_CHARGE -> pyroAbilityList;
+            case FIREWORK_ROCKET -> rocketmanAbilityList;
             default -> null;
         };
     }
@@ -153,6 +155,27 @@ public class Abilities {
         for (Player p : pyroAbilityList) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
         }
+        for (Player p : rocketmanAbilityList) {
+            p.getInventory().addItem(unbreakableFireworks(5));
+        }
+    }
+
+    // Extra items granted only on an actual respawn, kept separate from setAbilities(Player)
+    // since that method also re-runs on milk-drinking to refresh persistent effects - handing
+    // out items from there would incorrectly reward drinking milk too.
+    public void grantRespawnItems(Player p) {
+        if (rocketmanAbilityList.contains(p)) {
+            p.getInventory().addItem(unbreakableFireworks(1));
+        }
+    }
+
+    private ItemStack unbreakableFireworks(int amount) {
+        ItemStack fireworks = new ItemStack(Material.FIREWORK_ROCKET, amount);
+        ItemMeta meta = fireworks.getItemMeta();
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        fireworks.setItemMeta(meta);
+        return fireworks;
     }
 
     // Re-applies whatever abilities a single player currently holds (e.g. after a respawn).
@@ -236,4 +259,6 @@ public class Abilities {
     public List<Player> getSniperAbilityList() { return sniperAbilityList; }
 
     public List<Player> getPyroAbilityList() { return pyroAbilityList; }
+
+    public List<Player> getRocketmanAbilityList() { return rocketmanAbilityList; }
 }
