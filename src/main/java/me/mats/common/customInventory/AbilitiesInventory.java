@@ -36,7 +36,7 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
         this.abilities = abilities;
         this.abilityPoints = team.getPlayers().size()+extraAbilityPoints;
 
-        inventory =  Bukkit.createInventory(null, 27, title());
+        inventory =  Bukkit.createInventory(null, 18, title());
         ItemStack feather = new ItemStack(Material.FEATHER);
         ItemMeta meta = feather.getItemMeta();
 
@@ -266,6 +266,31 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
 
         bow.setItemMeta(meta);
         inventory.setItem(10, bow);
+
+
+        ItemStack fire = new ItemStack(Material.FIRE_CHARGE);
+        meta = fire.getItemMeta();
+
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(Component.text("Pyrokinetic", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+        lore = new ArrayList<>();
+        lore.add(roman("Level: 0", NamedTextColor.YELLOW));
+        lore.add(Component.text(""));
+        lore.add(roman("Let there be flames", NamedTextColor.GRAY));
+        lore.add(roman(" - Auto Smelt and Unbreaking on all Pickaxes (except wood)",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - Fire Aspect II on all Swords",
+                NamedTextColor.GREEN));
+        lore.add(roman(" - Fire Resistance (of course)",
+                NamedTextColor.GREEN));
+        lore.add(Component.text(""));
+        lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
+        lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
+        meta.lore(lore);
+
+        fire.setItemMeta(meta);
+        inventory.setItem(11, fire);
     }
 
     protected Component title() {
@@ -273,7 +298,7 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
     }
 
     protected void updateInventoryTitle() {
-        Inventory newGui =  Bukkit.createInventory(null, 27, title());
+        Inventory newGui =  Bukkit.createInventory(null, 18, title());
         newGui.setContents(inventory.getContents());
         inventory = newGui;
         for (Player p : team.getPlayers()) {

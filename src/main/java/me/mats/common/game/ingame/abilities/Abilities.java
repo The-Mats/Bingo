@@ -38,6 +38,7 @@ public class Abilities {
     protected final List<Player> endermanAbilityList = new ArrayList<>();
     protected final List<Player> stalkerAbilityList = new ArrayList<>();
     protected final List<Player> sniperAbilityList = new ArrayList<>();
+    protected final List<Player> pyroAbilityList = new ArrayList<>();
 
     // Swaps a stale Player reference (e.g. from before a relog) for the current one in every
     // ability list. A subclass adding its own lists should override and call super first.
@@ -76,6 +77,7 @@ public class Abilities {
             case ENDER_PEARL -> endermanAbilityList;
             case SPYGLASS -> stalkerAbilityList;
             case BOW -> sniperAbilityList;
+            case FIRE_CHARGE -> pyroAbilityList;
             default -> null;
         };
     }
@@ -148,6 +150,9 @@ public class Abilities {
         for (Player p : teleporterAbilityList) {
             p.getInventory().setItem(7, compass);
         }
+        for (Player p : pyroAbilityList) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
+        }
     }
 
     // Re-applies whatever abilities a single player currently holds (e.g. after a respawn).
@@ -173,11 +178,14 @@ public class Abilities {
         if (timeWizardAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, PotionEffect.INFINITE_DURATION, 4));
         }
-        if ( stalkerAbilityList.contains(p)) {
+        if (stalkerAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0));
         }
         if (sniperAbilityList.contains(p)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
+        }
+        if (pyroAbilityList.contains(p)) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
         }
     }
 
@@ -226,4 +234,6 @@ public class Abilities {
     public List<Player> getStalkerAbilityList() { return stalkerAbilityList; }
 
     public List<Player> getSniperAbilityList() { return sniperAbilityList; }
+
+    public List<Player> getPyroAbilityList() { return pyroAbilityList; }
 }

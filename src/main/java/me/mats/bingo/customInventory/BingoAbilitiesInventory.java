@@ -40,7 +40,7 @@ public class BingoAbilitiesInventory extends AbilitiesInventory {
         meta.lore(lore);
 
         helmet.setItemMeta(meta);
-        inventory.setItem(12, helmet);
+        inventory.setItem(16, helmet);
 
         ItemStack gap = new ItemStack(Material.GOLDEN_APPLE);
         meta = gap.getItemMeta();
@@ -60,6 +60,6 @@ public class BingoAbilitiesInventory extends AbilitiesInventory {
         meta.lore(lore);
 
         gap.setItemMeta(meta);
-        inventory.setItem(13, gap);
+        inventory.setItem(17, gap);
     }
 }

@@ -2,6 +2,7 @@ package me.mats.common.game.ingame.abilities;
 
 import me.mats.common.game.ingame.IngameState;
 import me.mats.common.game.ingame.ItemLists;
+import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bukkit.*;
@@ -19,12 +20,11 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.LootGenerateEvent;
-import org.bukkit.inventory.CraftingInventory;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -115,6 +115,23 @@ public class AbilitiesListener implements Listener {
                 ci.setResult(item);
             } else if ((item.getType().toString().contains("AXE") || item.getType().toString().contains("SHOVEL")) && state.getAbilities().getMinerAbilityList2().contains(p)) {
                 meta.addEnchant(Enchantment.DIG_SPEED, 4, false);
+                item.setItemMeta(meta);
+                ci.setResult(item);
+            }
+
+            if (item.getType().toString().contains("PICKAXE") && item.getType() != Material.WOODEN_PICKAXE && state.getAbilities().getPyroAbilityList().contains(p)) {
+                if (meta.getEnchantLevel(Enchantment.DURABILITY) < 1) {
+                    meta.addEnchant(Enchantment.DURABILITY, 1, false);
+                }
+                List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+                lore.add(AutoSmeltCache.AUTO_SMELT_LORE);
+                meta.lore(lore);
+                item.setItemMeta(meta);
+                ci.setResult(item);
+            }
+
+            if (item.getType().toString().contains("SWORD") && state.getAbilities().getPyroAbilityList().contains(p)) {
+                meta.addEnchant(Enchantment.FIRE_ASPECT, 2, false);
                 item.setItemMeta(meta);
                 ci.setResult(item);
             }
@@ -249,6 +266,24 @@ public class AbilitiesListener implements Listener {
                 p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.MASTER, 1, 1);
 
                 e.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockMine(BlockDropItemEvent e) {
+        ItemStack tool = e.getPlayer().getInventory().getItemInMainHand();
+        if (!tool.getType().toString().contains("PICKAXE") || !AutoSmeltCache.hasAutoSmelt(tool)) {
+            return;
+        }
+
+        for (Item itemEntity : e.getItems()) {
+            ItemStack itemStack = itemEntity.getItemStack();
+            ItemStack cooked = AutoSmeltCache.get(itemStack.getType());
+            if (cooked != null) {
+                ItemStack result = cooked.clone();
+                result.setAmount(itemStack.getAmount());
+                itemEntity.setItemStack(result);
             }
         }
     }
