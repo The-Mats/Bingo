@@ -3,7 +3,6 @@ package me.mats.bingo.game;
 import me.mats.advancementinteraction.AdvancementInteraction;
 import me.mats.bingo.Bingo;
 import me.mats.common.enums.Color;
-import me.mats.bingo.game.ingame.BingoIngameState;
 import me.mats.bingo.game.waiting.BingoWaitingState;
 import me.mats.common.GeneralListener;
 import me.mats.bingo.message.BingoMessage;
@@ -20,12 +19,9 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class BingoManager extends GameManager<BingoTeam> {
 
-    // Tracks all running Bingo games specifically (as opposed to GameManager's cross-game registry)
-    public static List<BingoManager> runningGames = new ArrayList<>();
     public static List<World> worlds = new ArrayList<>();
 
     // Static number tracker for naming
@@ -34,44 +30,6 @@ public class BingoManager extends GameManager<BingoTeam> {
     private static String nextName() {
         num++;
         return "Bingo" + num;
-    }
-
-    // Simple getter for all games
-    public static List<BingoManager> getRunningGames() {
-        return runningGames;
-    }
-
-    // Check if a Player is in a Bingo game
-    public static boolean inBingo(Player p) {
-        for (BingoManager bm : runningGames) {
-            if (bm.getPlayers().contains(p)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Get the Bingo game of a player
-    public static BingoManager getBingo(Player p) {
-        for (BingoManager bm : runningGames) {
-            if (bm.getPlayers().contains(p)) {
-                return bm;
-            }
-        }
-        return null;
-    }
-
-    // Find a running game a player (by UUID) belongs to, even if their Player object is stale
-    // (e.g. they disconnected and are logging back in with a fresh Player instance)
-    public static BingoManager getBingoByUUID(UUID uuid) {
-        for (BingoManager bm : runningGames) {
-            for (Player p : bm.getPlayers()) {
-                if (p.getUniqueId().equals(uuid)) {
-                    return bm;
-                }
-            }
-        }
-        return null;
     }
 
     public static List<World> getWorlds() {
@@ -85,7 +43,6 @@ public class BingoManager extends GameManager<BingoTeam> {
         super(nextName(), plugin);
         worlds.add(getWorld());
 
-        runningGames.add(this);
         setGameState(new BingoWaitingState(this));
         getGameState().start();
     }
@@ -168,17 +125,4 @@ public class BingoManager extends GameManager<BingoTeam> {
         }
     }
 
-    public boolean inWaitingState() {
-        return getGameState() instanceof BingoWaitingState;
-    }
-
-    public boolean inIngameState() {
-        return getGameState() instanceof BingoIngameState;
-    }
-
-    @Override
-    public void endGame() {
-        super.endGame();
-        runningGames.remove(this);
-    }
 }
