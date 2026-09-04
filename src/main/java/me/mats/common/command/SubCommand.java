@@ -25,4 +25,10 @@ public interface SubCommand<M extends GameManager<?>> {
     default boolean isAvailable(GameCommand<M> cmd, Player p) {
         return true;
     }
+
+    // Whether only ops may run this subcommand. Regular players get "join"/"leave" and nothing
+    // else - every other subcommand (create, end, field, ability) is op-only by default.
+    default boolean requiresOp() {
+        return true;
+    }
 }

@@ -73,6 +73,10 @@ public abstract class GameCommand<M extends GameManager<?>> implements CommandEx
             p.sendMessage(MessageBuilder.error("Wrong usage"));
             return true;
         }
+        if (sub.requiresOp() && !p.isOp()) {
+            p.sendMessage(MessageBuilder.error("You don't have permission to do that"));
+            return true;
+        }
         sub.execute(this, p, Arrays.copyOfRange(args, 1, args.length));
         return true;
     }
@@ -85,14 +89,15 @@ public abstract class GameCommand<M extends GameManager<?>> implements CommandEx
         if (args.length == 1) {
             List<String> names = new ArrayList<>();
             for (Map.Entry<String, SubCommand<M>> entry : subCommands.entrySet()) {
-                if (entry.getValue().isAvailable(this, p)) {
+                SubCommand<M> sub = entry.getValue();
+                if ((!sub.requiresOp() || p.isOp()) && sub.isAvailable(this, p)) {
                     names.add(entry.getKey());
                 }
             }
             return names;
         }
         SubCommand<M> sub = subCommands.get(args[0].toLowerCase());
-        if (sub == null) {
+        if (sub == null || (sub.requiresOp() && !p.isOp())) {
             return List.of();
         }
         return sub.tabComplete(this, p, Arrays.copyOfRange(args, 1, args.length));

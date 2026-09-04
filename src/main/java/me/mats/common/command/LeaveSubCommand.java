@@ -25,4 +25,9 @@ class LeaveSubCommand<M extends GameManager<?>> implements SubCommand<M> {
     public boolean isAvailable(GameCommand<M> cmd, Player p) {
         return cmd.getGame(p) != null;
     }
+
+    @Override
+    public boolean requiresOp() {
+        return false;
+    }
 }

@@ -44,4 +44,9 @@ class JoinSubCommand<M extends GameManager<?>> implements SubCommand<M> {
     public boolean isAvailable(GameCommand<M> cmd, Player p) {
         return !cmd.getRunningGames().isEmpty();
     }
+
+    @Override
+    public boolean requiresOp() {
+        return false;
+    }
 }

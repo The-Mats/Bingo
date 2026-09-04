@@ -25,7 +25,6 @@ import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import static me.mats.common.enums.Color.*;
 
@@ -35,7 +34,6 @@ public class GeneralListener implements Listener {
     private static final Scoreboard standardBoard = Bukkit.getScoreboardManager().getNewScoreboard();
     private static final Team standardTeam = standardBoard.registerNewTeam("Standard");
     private static final Team adminTeam = standardBoard.registerNewTeam("Owner");
-    private static final List<UUID> admins = List.of(UUID.fromString("ff7e1b97-3ffe-420e-9027-c1464eeab17b"));
 
     private final JavaPlugin plugin;
 
@@ -65,7 +63,7 @@ public class GeneralListener implements Listener {
         p.setScoreboard(standardBoard);
         p.sendPlayerListHeaderAndFooter(Message.O_BRACKET.getComponent().append(Message.PLAYERS.getComponent()).append(Message.C_BRACKET.getComponent()).appendNewline(), Component.newline().append(Component.text("Playing ", NamedTextColor.GRAY)).append(Component.text("LOBBY1", NamedTextColor.YELLOW)));
 
-        if (admins.contains(p.getUniqueId())) {
+        if (p.isOp()) {
             p.displayName(Component.text(p.getName(), ADMIN.getTextColor()));
             adminTeam.addPlayer(p);
         } else {
@@ -122,7 +120,7 @@ public class GeneralListener implements Listener {
     public static void setDefaults(Player p) {
         p.sendPlayerListHeaderAndFooter(Message.O_BRACKET.getComponent().append(Message.PLAYERS.getComponent()).append(Message.C_BRACKET.getComponent()).appendNewline(), Component.newline().append(Component.text("Playing ", NamedTextColor.GRAY)).append(Component.text("LOBBY1", NamedTextColor.YELLOW)));
         p.setScoreboard(standardBoard);
-        if (admins.contains(p.getUniqueId())) {
+        if (p.isOp()) {
             p.playerListName(adminTeam.prefix().append(Component.text(p.getName(), adminTeam.color())));
             p.displayName(Component.text(p.getName(), ADMIN.getTextColor()));
         } else {
