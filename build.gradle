@@ -8,7 +8,7 @@ group = 'me.mats'
 version = '1.0'
 
 //Variables
-def main = 'me.mats.bingo.Bingo'
+def main = 'me.mats.common.GameSuite'
 
 repositories {
     mavenCentral()

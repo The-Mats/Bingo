@@ -50,6 +50,25 @@ public abstract class GameManager<T extends me.mats.common.game.Team> {
         return null;
     }
 
+    // Type-scoped variant of getGame(Player), for commands that only care about one game type
+    // (e.g. "/bingo join" should only ever find running Bingo games, not Streak ones).
+    public static <M extends GameManager<?>> M getGameOfType(Player p, Class<M> type) {
+        GameManager<?> g = getGame(p);
+        return type.isInstance(g) ? type.cast(g) : null;
+    }
+
+    // Every currently running game of one type, e.g. every running Bingo game for "/bingo join"'s
+    // tab-complete and lookup-by-name - replaces each game keeping its own duplicate static list.
+    public static <M extends GameManager<?>> List<M> getGamesOfType(Class<M> type) {
+        List<M> result = new ArrayList<>();
+        for (GameManager<?> g : ALL) {
+            if (type.isInstance(g)) {
+                result.add(type.cast(g));
+            }
+        }
+        return result;
+    }
+
     // Find a running game a player (by UUID) belongs to, even if their Player object is stale
     // (e.g. they disconnected and are logging back in with a fresh Player instance)
     public static GameManager<?> getGameByUUID(UUID uuid) {

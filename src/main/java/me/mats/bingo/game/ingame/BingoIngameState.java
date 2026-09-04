@@ -19,6 +19,7 @@ import me.mats.bingo.game.ingame.spawn.SpawnProtectionListener;
 import me.mats.common.game.ingame.BackpackListener;
 import me.mats.common.game.ingame.IngameState;
 import me.mats.common.game.ingame.ItemLists;
+import me.mats.common.game.ingame.RegeneratableField;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -35,7 +36,7 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
-public class BingoIngameState extends IngameState<BingoManager> {
+public class BingoIngameState extends IngameState<BingoManager> implements RegeneratableField {
 
     private Map<Material, BingoItem> bingoItemsMap = null;
     // This is needed for Gapper Ability
@@ -43,6 +44,8 @@ public class BingoIngameState extends IngameState<BingoManager> {
 
     // These are not changeable at this point
     private final int size;
+    private final int extraAbilityPoints;
+    private final int spawnTime;
 
     private final BingoCollectListener bingoCollectListener;
     private final BackpackListener backpackListener;
@@ -50,8 +53,6 @@ public class BingoIngameState extends IngameState<BingoManager> {
     private final SpawnProtectionListener spawnProtectionListener;
     private final BingoAbilitiesMenuListener abilitiesMenuListener;
     private final BingoAbilitiesListener abilitiesListener;
-    private final int extraAbilityPoints;
-    private final int spawnTime;
 
     // To later send final Advancement Screen
     private List<ItemStack> fieldItems;
@@ -84,7 +85,8 @@ public class BingoIngameState extends IngameState<BingoManager> {
 
     }
 
-    public void newBingoField() {
+    @Override
+    public void regenerateField() {
         // Check if a Bingo Field has already been generated and if yes remove it
         List<String> removeAdvancements = getOldAdvancements();
         TeamAdvancements.revokeAdvancements(manager.getPlayers(), "bingo", removeAdvancements);
@@ -236,7 +238,7 @@ public class BingoIngameState extends IngameState<BingoManager> {
 
     @Override
     public void start() {
-        newBingoField();
+        regenerateField();
 
         // Register required Listeners for Spawn
         Bukkit.getPluginManager().registerEvents(spawnListener, manager.getPlugin());

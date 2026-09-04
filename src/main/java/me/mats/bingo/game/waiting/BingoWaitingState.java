@@ -6,6 +6,8 @@ import me.mats.bingo.game.BingoManager;
 import me.mats.bingo.game.BingoTeam;
 import me.mats.common.game.GameState;
 import me.mats.common.game.ingame.ItemLists;
+import me.mats.common.game.waiting.AbilityConfig;
+import me.mats.common.game.waiting.FieldConfig;
 import me.mats.bingo.game.ingame.BingoIngameState;
 import me.mats.bingo.message.BingoMessages;
 import me.mats.common.message.MessageBuilder;
@@ -15,7 +17,8 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-public class BingoWaitingState extends WaitingState<BingoManager> {
+public class BingoWaitingState extends WaitingState<BingoManager> implements FieldConfig, AbilityConfig {
+
     private ItemLists.ListType setting = ItemLists.ListType.DEFAULT;
     private int size = 5;
     private int extraAbilityPoints = 0;
@@ -83,21 +86,45 @@ public class BingoWaitingState extends WaitingState<BingoManager> {
         }
     }
 
-    // Getters and Setters
+    // FieldConfig / AbilityConfig
+    @Override
+    public ItemLists.ListType getSetting() {
+        return setting;
+    }
+
+    @Override
     public void setSetting(ItemLists.ListType setting) {
         this.setting = setting;
         sendSizeTypeActionBar();
     }
 
+    @Override
+    public int getSize() {
+        return size;
+    }
+
+    @Override
     public void setSize(int size) {
         this.size = size;
         sendSizeTypeActionBar();
     }
 
+    @Override
+    public int getExtraAbilityPoints() {
+        return extraAbilityPoints;
+    }
+
+    @Override
     public void setExtraAbilityPoints(int extraAbilityPoints) {
         this.extraAbilityPoints = extraAbilityPoints;
     }
 
+    @Override
+    public int getSpawnTime() {
+        return spawnTime;
+    }
+
+    @Override
     public void setSpawnTime(int spawnTime) {
         this.spawnTime = spawnTime;
     }
