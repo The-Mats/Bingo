@@ -32,6 +32,7 @@ public final class GameSuite extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new GeneralListener(this), this);
         getServer().getPluginManager().registerEvents(new CustomInventoryListener(), this);
+        getServer().getPluginManager().registerEvents(new ServerListPingListener(), this);
 
         WorldTPCommand worldTPCommand = new WorldTPCommand();
         Objects.requireNonNull(getCommand("worldtp")).setExecutor(worldTPCommand);
