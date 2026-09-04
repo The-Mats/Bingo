@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -40,6 +41,7 @@ public class Abilities {
     protected final List<Player> sniperAbilityList = new ArrayList<>();
     protected final List<Player> pyroAbilityList = new ArrayList<>();
     protected final List<Player> rocketmanAbilityList = new ArrayList<>();
+    protected final List<Player> bookAbilityList = new ArrayList<>();
 
     // Swaps a stale Player reference (e.g. from before a relog) for the current one in every
     // ability list. A subclass adding its own lists should override and call super first.
@@ -80,6 +82,7 @@ public class Abilities {
             case BOW -> sniperAbilityList;
             case FIRE_CHARGE -> pyroAbilityList;
             case FIREWORK_ROCKET -> rocketmanAbilityList;
+            case ENCHANTED_BOOK -> bookAbilityList;
             default -> null;
         };
     }
@@ -150,8 +153,23 @@ public class Abilities {
         compass.setItemMeta(meta);
 
         for (Player p : teleporterAbilityList) {
-            p.getInventory().setItem(7, compass);
+            p.getInventory().setItem(8, compass.clone());
         }
+
+        ItemStack anvil = new ItemStack(Material.ANVIL);
+        meta = anvil.getItemMeta();
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(roman("Anvil", TextColor.color(0xFCCB00)).decoration(TextDecoration.BOLD, true));
+        lore = new ArrayList<>();
+        lore.add(roman("CLICK", NamedTextColor.YELLOW).append(roman(" to use the pocket Anvil", NamedTextColor.GRAY)));
+        meta.lore(lore);
+        anvil.setItemMeta(meta);
+
+        for (Player p : bookAbilityList) {
+            p.getInventory().setItem(7, anvil.clone());
+        }
+
         for (Player p : pyroAbilityList) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0));
         }
@@ -164,9 +182,20 @@ public class Abilities {
     // since that method also re-runs on milk-drinking to refresh persistent effects - handing
     // out items from there would incorrectly reward drinking milk too.
     public void grantRespawnItems(Player p) {
-        if (rocketmanAbilityList.contains(p)) {
+        if (rocketmanAbilityList.contains(p) && !hasUnbreakableFirework(p)) {
             p.getInventory().addItem(unbreakableFireworks(1));
         }
+    }
+
+    // Keep Inventory already carries the ability's fireworks across a death, so only grant a
+    // fresh one on respawn if none survived - otherwise every death would net another firework.
+    private boolean hasUnbreakableFirework(Player p) {
+        for (ItemStack item : p.getInventory().getContents()) {
+            if (item != null && item.getType() == Material.FIREWORK_ROCKET && item.getItemMeta() != null && item.getItemMeta().isUnbreakable()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ItemStack unbreakableFireworks(int amount) {
@@ -261,4 +290,6 @@ public class Abilities {
     public List<Player> getPyroAbilityList() { return pyroAbilityList; }
 
     public List<Player> getRocketmanAbilityList() { return rocketmanAbilityList; }
+
+    public List<Player> getBookAbilityList() { return bookAbilityList; }
 }

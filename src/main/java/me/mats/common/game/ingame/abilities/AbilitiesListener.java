@@ -1,5 +1,6 @@
 package me.mats.common.game.ingame.abilities;
 
+import com.destroystokyo.paper.event.player.PlayerElytraBoostEvent;
 import me.mats.common.game.ingame.IngameState;
 import me.mats.common.game.ingame.ItemLists;
 import net.kyori.adventure.text.Component;
@@ -9,6 +10,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDropItemEvent;
@@ -16,9 +18,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -28,6 +28,7 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.loot.LootContext;
 import org.bukkit.loot.LootTable;
 
@@ -46,6 +47,9 @@ public class AbilitiesListener implements Listener {
     private final Map<Inventory, Triple<ItemStack[], LootTable, LootContext>> inventories = new HashMap<>();
 
     private final Set<UUID> pendingPearlDamage = new HashSet<>(); // Track if an ender pearl was used to stop the damage
+
+    private final static Enchantment[] enchantments = Arrays.stream(Enchantment.values()).filter(ench -> !ench.isCursed()).toArray(Enchantment[]::new);
+    private final Random random = new Random();
 
     public static Material toMaterial(EntityType et) {
         try {
@@ -80,8 +84,11 @@ public class AbilitiesListener implements Listener {
         if (state.getAbilities().getKeepInventoryAbilityList().contains(e.getPlayer())) {
             e.setKeepInventory(true);
             e.setKeepLevel(true);
+            // setKeepInventory alone doesn't stop these from also being spawned as ground drops -
+            // without clearing this, an item can end up both kept in inventory AND dropped, then
+            // picked back up, duplicating it.
+            e.getDrops().clear();
         }
-
     }
 
     @EventHandler
@@ -229,12 +236,36 @@ public class AbilitiesListener implements Listener {
             if ((p.getInventory().getItemInMainHand().getType() == Material.COMPASS && p.getInventory().getItemInMainHand().getItemMeta().isUnbreakable()) || (p.getInventory().getItemInOffHand().getType() == Material.COMPASS && p.getInventory().getItemInOffHand().getItemMeta().isUnbreakable())) {
                 openTeleporter(p);
                 e.setCancelled(true);
+                // setCancelled only blocks the block-interaction half of the right-click; without
+                // denying the item-use half too, vanilla leaves a stale "in-use" reference on this
+                // compass that can resurface as an extra copy in the held slot after a respawn.
+                e.setUseItemInHand(Event.Result.DENY);
             }
         }
     }
 
     // Hook: open whatever "teleport to teammates" GUI this game uses.
     protected void openTeleporter(Player p) {
+    }
+
+    @EventHandler
+    public void onAnvilOpen(PlayerInteractEvent e) {
+        Player p = e.getPlayer();
+        if (state.getAbilities().getBookAbilityList().contains(p)) {
+            if ((p.getInventory().getItemInMainHand().getType() == Material.ANVIL && p.getInventory().getItemInMainHand().getItemMeta().isUnbreakable()) || (p.getInventory().getItemInOffHand().getType() == Material.ANVIL && p.getInventory().getItemInOffHand().getItemMeta().isUnbreakable())) {
+                // openAnvil(loc, true) opens a real vanilla anvil menu (fires PrepareAnvilEvent,
+                // returns unconsumed items to the player on close) without needing an actual
+                // anvil block at that location - unlike Bukkit.createInventory(ANVIL), which is
+                // a known-broken CraftInventoryCustom that doesn't behave like a real anvil.
+                p.openAnvil(p.getLocation(), true);
+                e.setCancelled(true);
+                // setCancelled only blocks the block-interaction half of the right-click; without
+                // denying the item-use half too, vanilla leaves a stale "in-use" reference on this
+                // compass that can resurface as an extra copy in the held slot after a respawn.
+                e.setUseItemInHand(Event.Result.DENY);
+            }
+        }
+
     }
 
     @EventHandler
@@ -273,17 +304,60 @@ public class AbilitiesListener implements Listener {
     @EventHandler
     public void onBlockMine(BlockDropItemEvent e) {
         ItemStack tool = e.getPlayer().getInventory().getItemInMainHand();
-        if (!tool.getType().toString().contains("PICKAXE") || !AutoSmeltCache.hasAutoSmelt(tool)) {
-            return;
+        if (tool.getType().toString().contains("PICKAXE") && AutoSmeltCache.hasAutoSmelt(tool)) {
+            for (Item itemEntity : e.getItems()) {
+                ItemStack itemStack = itemEntity.getItemStack();
+                ItemStack cooked = AutoSmeltCache.get(itemStack.getType());
+                if (cooked != null) {
+                    ItemStack result = cooked.clone();
+                    result.setAmount(itemStack.getAmount());
+                    itemEntity.setItemStack(result);
+                }
+            }
         }
+        if (e.getBlockState().getType() == Material.BOOKSHELF && state.getAbilities().getBookAbilityList().contains(e.getPlayer())) {
+            Item itemEntity = e.getItems().get(0); // Count should always be 3
+            int amount = itemEntity.getItemStack().getAmount();
+            for (int i = 0; i < amount; i++) {
+                ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+                EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
 
-        for (Item itemEntity : e.getItems()) {
-            ItemStack itemStack = itemEntity.getItemStack();
-            ItemStack cooked = AutoSmeltCache.get(itemStack.getType());
-            if (cooked != null) {
-                ItemStack result = cooked.clone();
-                result.setAmount(itemStack.getAmount());
-                itemEntity.setItemStack(result);
+                int enchantCount = random.nextInt(4) + 1;
+                for (int j = 0; j < enchantCount; j++) {
+                    Enchantment enchant = enchantments[random.nextInt(enchantments.length)];
+                    meta.addStoredEnchant(enchant, random.nextInt(enchant.getMaxLevel()) + 1, false);
+                }
+                meta.setUnbreakable(true);
+                meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+                book.setItemMeta(meta);
+                if (i == 0) {
+                    itemEntity.setItemStack(book);
+                } else {
+                    itemEntity.getWorld().dropItemNaturally(itemEntity.getLocation(), book);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onGrindstoneUse(PrepareGrindstoneEvent e) {
+        Player p = (Player) e.getViewers().get(0);
+        if (state.getAbilities().getBookAbilityList().contains(p)) {
+            // e.getInventory().
+        }
+    }
+
+    // Only the Rocketman ability's own unbreakable fireworks may boost an elytra - a regular
+    // firework picked up elsewhere (loot, bookshelf enchant table, etc.) must not.
+    @EventHandler
+    public void onElytraBoost(PlayerElytraBoostEvent e) {
+        Player p = e.getPlayer();
+        if (state.getManager().getPlayers().contains(p)) {
+            ItemStack usedFirework = e.getItemStack();
+            ItemMeta meta = usedFirework == null ? null : usedFirework.getItemMeta();
+            if (meta == null || !meta.isUnbreakable()) {
+                e.setCancelled(true);
+                e.setShouldConsume(false);
             }
         }
     }
@@ -297,7 +371,54 @@ public class AbilitiesListener implements Listener {
         }
     }
 
-        private boolean isEmpty(ItemStack[] contents) {
+    @EventHandler
+    public void onUseAnvil(PrepareAnvilEvent e) {
+        Player p = (Player) e.getViewers().get(0);
+        if (state.getAbilities().getBookAbilityList().contains(p)) {
+            e.getInventory().setRepairCost(0);
+
+            // setRepairCost(0) only zeroes the level cost shown/charged for this use - the
+            // resulting item still carries its own RepairCost tag (the "prior work penalty"),
+            // which keeps climbing and would eventually hit "too expensive!" even at 0 XP cost.
+            ItemStack result = e.getResult();
+            if (result != null) {
+                ItemMeta meta = result.getItemMeta();
+                boolean changed = false;
+                if (meta instanceof Repairable repairable) {
+                    repairable.setRepairCost(0);
+                    changed = true;
+                }
+                // Vanilla's anvil merge doesn't reliably carry the Unbreakable tag through - if
+                // either input was one of our books, force it back onto the result so a merge
+                // with a normal (non-unbreakable) book can't strip the grindstone-block marker.
+                if (result.getType() == Material.ENCHANTED_BOOK && (isAbilityBook(e.getInventory().getFirstItem()) || isAbilityBook(e.getInventory().getSecondItem()))) {
+                    meta.setUnbreakable(true);
+                    meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+                    changed = true;
+                }
+                if (changed) {
+                    result.setItemMeta(meta);
+                    e.setResult(result);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onUseGrindstone(PrepareGrindstoneEvent e) {
+        if (isAbilityBook(e.getInventory().getUpperItem()) || isAbilityBook(e.getInventory().getLowerItem())) {
+            // Grindstones disenchant books for XP - without this, an ability book could be
+            // ground down to a plain book, turned back into bookshelves, and re-broken for
+            // more ability books, farming free enchants/XP in a loop.
+            e.setResult(null);
+        }
+    }
+
+    private static boolean isAbilityBook(ItemStack item) {
+        return item != null && item.getType() == Material.ENCHANTED_BOOK && item.getItemMeta() != null && item.getItemMeta().isUnbreakable();
+    }
+
+    private boolean isEmpty(ItemStack[] contents) {
         return Arrays.stream(contents).allMatch(Objects::isNull);
     }
 

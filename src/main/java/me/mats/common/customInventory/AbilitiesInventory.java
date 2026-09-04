@@ -292,6 +292,7 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
         fire.setItemMeta(meta);
         inventory.setItem(11, fire);
 
+
         ItemStack fireworks = new ItemStack(Material.FIREWORK_ROCKET);
         meta = fireworks.getItemMeta();
 
@@ -311,6 +312,28 @@ public abstract class AbilitiesInventory extends CustomInventory<Inventory> {
 
         fireworks.setItemMeta(meta);
         inventory.setItem(12, fireworks);
+
+
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        meta = book.getItemMeta();
+
+        meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.displayName(Component.text("Bookworm", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+        lore = new ArrayList<>();
+        lore.add(roman("Level: 0", NamedTextColor.YELLOW));
+        lore.add(Component.text(""));
+        lore.add(roman("Lorom Ipsum and so on", NamedTextColor.GRAY));
+        lore.add(roman(" - Bookshelves drop enchanted books with up to 4 enchants", NamedTextColor.GREEN));
+        lore.add(roman(" - Personal anvil in your inventory", NamedTextColor.GREEN));
+        lore.add(roman(" - No anvil costs", NamedTextColor.GREEN));
+        lore.add(Component.text(""));
+        lore.add(roman("LEFT CLICK", NamedTextColor.YELLOW).append(roman(" to gain Ability", NamedTextColor.GRAY)));
+        lore.add(roman("RIGHT CLICK", NamedTextColor.YELLOW).append(roman(" to lose Ability", NamedTextColor.GRAY)));
+        meta.lore(lore);
+
+        book.setItemMeta(meta);
+        inventory.setItem(13, book);
     }
 
     protected Component title() {

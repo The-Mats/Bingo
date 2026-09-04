@@ -95,7 +95,7 @@ public class SpawnCountdown {
 
                     p.getInventory().clear();
                     p.getInventory().setChestplate(elytra);
-                    p.getInventory().setItem(8, manager.getTeam(p).getBackpackItem());
+                    p.getInventory().setItem(8, manager.getTeam(p).getBackpackItem().clone());
                     p.closeInventory();
 
                 }

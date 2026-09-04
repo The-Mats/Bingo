@@ -5,6 +5,7 @@ import me.mats.common.game.GameManager;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
@@ -59,6 +60,10 @@ public class BackpackListener implements Listener {
             if (p.getInventory().getItemInMainHand().getType() == Material.BUNDLE || p.getInventory().getItemInOffHand().getType() == Material.BUNDLE) {
                 CustomInventoryManager.openInventory(p, manager.getTeam(p).getBackpackInventory());
                 e.setCancelled(true);
+                // setCancelled only blocks the block-interaction half of the right-click; without
+                // denying the item-use half too, vanilla leaves a stale "in-use" reference on this
+                // bundle that can resurface as an extra copy in the held slot after a respawn.
+                e.setUseItemInHand(Event.Result.DENY);
             }
         }
     }

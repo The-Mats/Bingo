@@ -265,9 +265,9 @@ public class BingoIngameState extends IngameState<BingoManager> {
         for (Player p : manager.getPlayers()) {
             Team playerTeam = manager.getBoard().getPlayerTeam(p);
             p.playerListName(playerTeam.prefix().append(Component.text(p.getName(), playerTeam.color())).append(Component.text(" ")).append(Message.O_BRACKET.getComponent()).append(Component.text("O", Color.OVERWORLD.getTextColor())).append(Message.C_BRACKET.getComponent()));
-            p.getInventory().setItem(8, abilitiesItem);
-            p.getInventory().setItem(0, crafting);
-            p.getInventory().setItem(1, furnace);
+            p.getInventory().setItem(8, abilitiesItem.clone());
+            p.getInventory().setItem(0, crafting.clone());
+            p.getInventory().setItem(1, furnace.clone());
 
             // Give Player all recipes
             p.discoverRecipes(recipeNames);
