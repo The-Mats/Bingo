@@ -1,7 +1,6 @@
 package me.mats.bingo.game;
 
 import me.mats.advancementinteraction.AdvancementInteraction;
-import me.mats.bingo.Bingo;
 import me.mats.common.enums.Color;
 import me.mats.bingo.game.waiting.BingoWaitingState;
 import me.mats.common.GeneralListener;
@@ -16,6 +15,7 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,7 @@ public class BingoManager extends GameManager<BingoTeam> {
 
     // Non-static stuff
 
-    public BingoManager(Bingo plugin) {
+    public BingoManager(JavaPlugin plugin) {
         super(nextName(), plugin);
         worlds.add(getWorld());
 

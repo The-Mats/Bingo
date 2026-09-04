@@ -1,6 +1,6 @@
 name: Bingo
 version: '${project.version}'
-main: me.mats.bingo.Bingo
+main: me.mats.common.GameSuite
 api-version: 1.20
 commands:
   worldtp:

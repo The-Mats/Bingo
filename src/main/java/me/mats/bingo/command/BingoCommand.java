@@ -1,12 +1,12 @@
 package me.mats.bingo.command;
 
-import me.mats.bingo.Bingo;
 import me.mats.bingo.game.BingoManager;
 import me.mats.common.command.GameCommand;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class BingoCommand extends GameCommand<BingoManager> {
 
-    public BingoCommand(Bingo plugin) {
+    public BingoCommand(JavaPlugin plugin) {
         super(plugin, BingoManager.class);
     }
 
@@ -17,6 +17,6 @@ public class BingoCommand extends GameCommand<BingoManager> {
 
     @Override
     protected BingoManager createGame() {
-        return new BingoManager((Bingo) plugin);
+        return new BingoManager(plugin);
     }
 }
